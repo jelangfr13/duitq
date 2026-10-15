@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
     // Validasi Zod (PWD-01)
     const validation = forgotPasswordSchema.safeParse({ email });
     if (!validation.success) {
-      setFieldError(validation.error.errors[0]?.message);
+      setFieldError(validation.error.issues[0]?.message);
       return;
     }
 

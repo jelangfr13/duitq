@@ -40,7 +40,7 @@ export default function RegisterPage() {
     const validation = registerSchema.safeParse({ fullName, email, password });
     if (!validation.success) {
       const errors: { fullName?: string; email?: string; password?: string } = {};
-      for (const err of validation.error.errors) {
+      for (const err of validation.error.issues) {
         if (err.path[0] === 'fullName') errors.fullName = err.message;
         if (err.path[0] === 'email') errors.email = err.message;
         if (err.path[0] === 'password') errors.password = err.message;

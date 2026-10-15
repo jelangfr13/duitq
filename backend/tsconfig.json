@@ -8,7 +8,9 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"],
-      "@shared": ["../shared/types/index.ts"]
+      "@shared": ["../shared/types/index.ts"],
+      "zod": ["./node_modules/zod"],
+      "*": ["./node_modules/*"]
     },
     "strict": true,
     "esModuleInterop": true,

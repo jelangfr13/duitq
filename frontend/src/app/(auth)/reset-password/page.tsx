@@ -66,7 +66,7 @@ function ResetPasswordForm() {
     const validation = resetPasswordSchema.safeParse({ token, password });
     if (!validation.success) {
       const errors: { password?: string } = {};
-      for (const err of validation.error.errors) {
+      for (const err of validation.error.issues) {
         if (err.path[0] === 'password') errors.password = err.message;
       }
       setFieldErrors(errors);

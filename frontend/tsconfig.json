@@ -21,7 +21,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["../shared/*"],
-      "@shared": ["../shared/types/index.ts"]
+      "@shared": ["../shared/types/index.ts"],
+      "zod": ["./node_modules/zod"]
     }
   },
   "include": [
