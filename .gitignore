@@ -1,0 +1,41 @@
+# Environment variables (Crucial for security)
+.env
+.env.*
+.env*.local
+!.env.example
+!**/.env.example
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+dist/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS & Editor files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SSL & Encryption Keys
+*.pem
+*.key
+*.cert

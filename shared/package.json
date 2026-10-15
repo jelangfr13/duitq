@@ -1,0 +1,10 @@
+{
+  "name": "@duitq/shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types and Zod schemas for DuitQ",
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

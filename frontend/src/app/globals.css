@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures for clean currency and number alignment per Bab 7.2 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
