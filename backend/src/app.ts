@@ -29,7 +29,11 @@ app.use(
       // Izinkan request tanpa origin (mobile apps, health-checks, curl)
       if (!origin) return callback(null, true);
       const cleanOrigin = origin.replace(/\/$/, '');
-      if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes('*')) {
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        allowedOrigins.includes('*') ||
+        cleanOrigin.endsWith('.vercel.app')
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS error: Origin ${origin} tidak diizinkan oleh sistem DuitQ`));
