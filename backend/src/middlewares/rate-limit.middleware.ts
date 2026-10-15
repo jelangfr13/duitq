@@ -5,12 +5,13 @@ import rateLimit from 'express-rate-limit';
  */
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5,
+  max: 20,
+  skipSuccessfulRequests: true, // Jangan hitung login yang sukses
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Terlalu banyak percobaan masuk. Silakan coba lagi setelah 15 menit.',
+    message: 'Terlalu banyak percobaan masuk yang gagal. Silakan coba lagi setelah 15 menit.',
   },
 });
 

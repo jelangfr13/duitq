@@ -43,11 +43,17 @@ export const useAuth = () => {
       return res.data;
     },
     onSuccess: (data) => {
+      const token = data?.data?.accessToken;
+      if (token && typeof window !== 'undefined') {
+        document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        document.cookie = `accessToken=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        localStorage.setItem('duitq_token', token);
+      }
       queryClient.setQueryData(['auth', 'me'], data?.data?.user);
       queryClient.invalidateQueries({
         queryKey: ['dashboard', 'funding-sources', 'storage-spaces', 'receivables'],
       });
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
     },
   });
 
@@ -66,8 +72,13 @@ export const useAuth = () => {
       return res.data;
     },
     onSuccess: () => {
+      if (typeof window !== 'undefined') {
+        document.cookie = 'token=; path=/; max-age=0; SameSite=Lax; Secure';
+        document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax; Secure';
+        localStorage.removeItem('duitq_token');
+      }
       queryClient.clear();
-      router.push('/login');
+      window.location.href = '/login';
     },
   });
 

@@ -11,6 +11,17 @@ export const api = axios.create({
   },
 });
 
+// Sisipkan token autentikasi ke Authorization header jika tersedia di client (dukungan cross-origin)
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('duitq_token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 /**
  * Ekstrak pesan kesalahan ramah pengguna dari error Axios atau Zod
  */

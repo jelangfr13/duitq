@@ -14,6 +14,9 @@ import receivableRoutes from './routes/receivable.routes';
 
 const app: Application = express();
 
+// Trust proxy for Render/Cloudflare/reverse-proxy IP resolution
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
