@@ -5,3 +5,4 @@ export * from './storage-space';
 export * from './transaction';
 export * from './receivable';
 export * from './dashboard';
+export * from './budget';

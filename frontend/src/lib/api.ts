@@ -22,6 +22,29 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Tangani token kadaluwarsa (HTTP 401): bersihkan sesi dan alihkan ke login jika di rute privat
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== 'undefined' && error.response?.status === 401) {
+      const pathname = window.location.pathname;
+      const isAuthPage =
+        pathname.startsWith('/login') ||
+        pathname.startsWith('/register') ||
+        pathname.startsWith('/forgot-password') ||
+        pathname.startsWith('/reset-password');
+
+      if (!isAuthPage) {
+        document.cookie = 'token=; path=/; max-age=0; SameSite=Lax; Secure';
+        document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax; Secure';
+        localStorage.removeItem('duitq_token');
+        window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Ekstrak pesan kesalahan ramah pengguna dari error Axios atau Zod
  */

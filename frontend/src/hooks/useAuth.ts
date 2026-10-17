@@ -7,6 +7,7 @@ import {
   ForgotPasswordDTO,
   ResetPasswordDTO,
   IUser,
+  UpdateUserProfileDTO,
 } from '@shared/types/user';
 
 export const useAuth = () => {
@@ -45,8 +46,8 @@ export const useAuth = () => {
     onSuccess: (data) => {
       const token = data?.data?.accessToken;
       if (token && typeof window !== 'undefined') {
-        document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
-        document.cookie = `accessToken=${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax; Secure`;
+        document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax; Secure`;
         localStorage.setItem('duitq_token', token);
       }
       queryClient.setQueryData(['auth', 'me'], data?.data?.user);
@@ -98,6 +99,40 @@ export const useAuth = () => {
     },
   });
 
+  // Mutasi Perbarui Profil & Preferensi (Update v1.2)
+  const updateProfileMutation = useMutation({
+    mutationFn: async (dto: UpdateUserProfileDTO) => {
+      const res = await api.patch('/users/profile', dto);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (data?.data?.user) {
+        queryClient.setQueryData(['auth', 'me'], data.data.user);
+      }
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
+  // Mutasi Hapus Akun Permanen
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.delete('/users/account');
+      return res.data;
+    },
+    onSuccess: () => {
+      if (typeof window !== 'undefined') {
+        document.cookie = 'token=; path=/; max-age=0; SameSite=Lax; Secure';
+        document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax; Secure';
+        localStorage.removeItem('duitq_token');
+        localStorage.removeItem('duitq_theme_color');
+        localStorage.removeItem('duitq_dark_mode');
+      }
+      queryClient.clear();
+      window.location.href = '/login';
+    },
+  });
+
   return {
     user,
     isLoading,
@@ -109,5 +144,11 @@ export const useAuth = () => {
     logoutMutation,
     forgotPasswordMutation,
     resetPasswordMutation,
+    updateProfileMutation,
+    updateProfile: updateProfileMutation.mutateAsync,
+    isUpdatingProfile: updateProfileMutation.isPending,
+    deleteAccountMutation,
+    deleteAccount: deleteAccountMutation.mutateAsync,
+    isDeletingAccount: deleteAccountMutation.isPending,
   };
 };

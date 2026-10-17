@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --app-primary: #2563EB;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
@@ -9,6 +16,11 @@ body {
   color: #0f172a;
   font-family: var(--font-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background-color: #020617;
+  color: #f8fafc;
 }
 
 /* Tabular figures for clean currency and number alignment per Bab 7.2 */

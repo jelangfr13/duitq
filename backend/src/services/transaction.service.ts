@@ -1,9 +1,10 @@
 import mongoose, { ClientSession, Types } from 'mongoose';
-import { Transaction, FundingSource, StorageSpace, ITransaction, TransactionType } from '../models';
+import { Transaction, FundingSource, StorageSpace, Budget, ITransaction, TransactionType } from '../models';
 import { AppError } from '../middlewares/error.middleware';
 import {
   CreateTransactionDTO,
   UpdateTransactionDTO,
+  TransactionFilterQueryDTO,
 } from '../../../shared/types/transaction';
 
 export class TransactionService {
@@ -48,6 +49,7 @@ export class TransactionService {
       amount: number;
       sourceFundingId?: Types.ObjectId | string | null;
       destinationFundingId?: Types.ObjectId | string | null;
+      budgetId?: Types.ObjectId | string | null;
       storageSpaceId?: Types.ObjectId | string | null;
       spaceFlowType?: 'IN' | 'OUT' | null;
     },
@@ -99,7 +101,17 @@ export class TransactionService {
       );
     }
 
-    // 2. Dampak mutasi ke Ruang Penyimpanan (StorageSpace)
+    // 2. Dampak mutasi ke Pos Anggaran (Budget)
+    if (tx.budgetId && tx.type === 'EXPENSE') {
+      const budgetObjId = new Types.ObjectId(tx.budgetId);
+      await Budget.updateOne(
+        { _id: budgetObjId, userId: userObjId },
+        { $inc: { spentAmount: tx.amount } },
+        opts
+      );
+    }
+
+    // 3. Dampak mutasi ke Ruang Penyimpanan (StorageSpace - legacy)
     if (tx.storageSpaceId) {
       const spaceObjId = new Types.ObjectId(tx.storageSpaceId);
       if (tx.spaceFlowType === 'IN') {
@@ -127,6 +139,7 @@ export class TransactionService {
       amount: number;
       sourceFundingId?: Types.ObjectId | string | null;
       destinationFundingId?: Types.ObjectId | string | null;
+      budgetId?: Types.ObjectId | string | null;
       storageSpaceId?: Types.ObjectId | string | null;
       spaceFlowType?: 'IN' | 'OUT' | null;
     },
@@ -178,7 +191,17 @@ export class TransactionService {
       );
     }
 
-    // 2. Kembalikan efek saldo Ruang Penyimpanan
+    // 2. Kembalikan efek saldo Pos Anggaran (Budget)
+    if (tx.budgetId && tx.type === 'EXPENSE') {
+      const budgetObjId = new Types.ObjectId(tx.budgetId);
+      await Budget.updateOne(
+        { _id: budgetObjId, userId: userObjId },
+        { $inc: { spentAmount: -tx.amount } },
+        opts
+      );
+    }
+
+    // 3. Kembalikan efek saldo Ruang Penyimpanan (legacy)
     if (tx.storageSpaceId) {
       const spaceObjId = new Types.ObjectId(tx.storageSpaceId);
       if (tx.spaceFlowType === 'IN') {
@@ -206,10 +229,25 @@ export class TransactionService {
       type: TransactionType;
       sourceFundingId?: string | null;
       destinationFundingId?: string | null;
+      budgetId?: string | null;
       storageSpaceId?: string | null;
     }
   ) {
     const userObjId = new Types.ObjectId(userId);
+
+    if (data.budgetId) {
+      const budget = await Budget.findOne({
+        _id: new Types.ObjectId(data.budgetId),
+        userId: userObjId,
+      });
+      if (!budget) {
+        throw new AppError('Pos anggaran tidak ditemukan', 404);
+      }
+      if (data.type === 'EXPENSE') {
+        // Otomatis arahkan sumber dana ke sumber dana anggaran
+        data.sourceFundingId = budget.fundingSourceId.toString();
+      }
+    }
 
     if (data.type === 'INCOME') {
       if (!data.destinationFundingId) {
@@ -291,13 +329,15 @@ export class TransactionService {
       spaceFlowType = null;
     }
 
-    // Validasi keberadaan dan kepemilikan Sumber Dana & Ruang Penyimpanan
-    await this.validateTransactionReferences(userId, {
+    // Validasi keberadaan dan kepemilikan Sumber Dana & Ruang Penyimpanan / Budget
+    const refData = {
       type: dto.type,
       sourceFundingId: dto.sourceFundingId,
       destinationFundingId: dto.destinationFundingId,
+      budgetId: dto.budgetId,
       storageSpaceId: dto.storageSpaceId,
-    });
+    };
+    await this.validateTransactionReferences(userId, refData);
 
     const transactionData = {
       userId: userObjId,
@@ -306,10 +346,11 @@ export class TransactionService {
       title: dto.title.trim(),
       notes: dto.notes?.trim(),
       transactionDate: dto.transactionDate || new Date(),
-      sourceFundingId: dto.sourceFundingId ? new Types.ObjectId(dto.sourceFundingId) : null,
-      destinationFundingId: dto.destinationFundingId
-        ? new Types.ObjectId(dto.destinationFundingId)
+      sourceFundingId: refData.sourceFundingId ? new Types.ObjectId(refData.sourceFundingId) : null,
+      destinationFundingId: refData.destinationFundingId
+        ? new Types.ObjectId(refData.destinationFundingId)
         : null,
+      budgetId: refData.budgetId ? new Types.ObjectId(refData.budgetId) : null,
       storageSpaceId: dto.storageSpaceId ? new Types.ObjectId(dto.storageSpaceId) : null,
       spaceFlowType,
       receivableId: dto.receivableId ? new Types.ObjectId(dto.receivableId) : null,
@@ -377,6 +418,13 @@ export class TransactionService {
             : null
           : oldTx.storageSpaceId;
 
+      const targetBudgetId =
+        dto.budgetId !== undefined
+          ? dto.budgetId
+            ? new Types.ObjectId(dto.budgetId)
+            : null
+          : oldTx.budgetId;
+
       let targetSpaceFlowType =
         dto.spaceFlowType !== undefined ? dto.spaceFlowType : oldTx.spaceFlowType;
 
@@ -388,14 +436,20 @@ export class TransactionService {
       }
 
       // Validasi referensi baru
-      await this.validateTransactionReferences(userId, {
+      const updateRefData = {
         type: targetType,
         sourceFundingId: targetSourceFundingId ? targetSourceFundingId.toString() : null,
         destinationFundingId: targetDestinationFundingId
           ? targetDestinationFundingId.toString()
           : null,
+        budgetId: targetBudgetId ? targetBudgetId.toString() : null,
         storageSpaceId: targetStorageSpaceId ? targetStorageSpaceId.toString() : null,
-      });
+      };
+      await this.validateTransactionReferences(userId, updateRefData);
+
+      const finalSourceFundingId = updateRefData.sourceFundingId
+        ? new Types.ObjectId(updateRefData.sourceFundingId)
+        : targetSourceFundingId;
 
       const newTxData = {
         type: targetType,
@@ -403,8 +457,9 @@ export class TransactionService {
         title: targetTitle,
         notes: targetNotes,
         transactionDate: targetDate,
-        sourceFundingId: targetSourceFundingId,
+        sourceFundingId: finalSourceFundingId,
         destinationFundingId: targetDestinationFundingId,
+        budgetId: targetBudgetId,
         storageSpaceId: targetStorageSpaceId,
         spaceFlowType: targetSpaceFlowType,
         receivableId:
@@ -474,6 +529,138 @@ export class TransactionService {
         message: 'Transaksi berhasil dihapus dan saldo telah dipulihkan',
       };
     });
+  }
+
+  /**
+   * 4. GET /api/v1/transactions (Histori Transaksi, Update v1.2)
+   * Mengambil daftar histori transaksi dengan filter lengkap, pagination, dan summary
+   */
+  async getAll(userId: string, query: Partial<TransactionFilterQueryDTO>) {
+    const userObjId = new Types.ObjectId(userId);
+    const conditions: any[] = [{ userId: userObjId }];
+
+    // 1. Filter pencarian case-insensitive pada title dan notes
+    if (query.search && query.search.trim()) {
+      const escapedSearch = query.search.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, 'i');
+      conditions.push({
+        $or: [{ title: searchRegex }, { notes: searchRegex }],
+      });
+    }
+
+    // 2. Filter tipe transaksi
+    if (
+      query.type &&
+      [
+        'INCOME',
+        'EXPENSE',
+        'TRANSFER',
+        'SPACE_ALLOCATION',
+        'RECEIVABLE_OUT',
+        'RECEIVABLE_IN',
+      ].includes(query.type)
+    ) {
+      conditions.push({ type: query.type });
+    }
+
+    // 3. Filter fundingSourceId (sourceFundingId === fundingSourceId OR destinationFundingId === fundingSourceId)
+    if (query.fundingSourceId && Types.ObjectId.isValid(query.fundingSourceId)) {
+      const fsId = new Types.ObjectId(query.fundingSourceId);
+      conditions.push({
+        $or: [{ sourceFundingId: fsId }, { destinationFundingId: fsId }],
+      });
+    }
+
+    // 4. Filter budgetId & storageSpaceId
+    if (query.budgetId && Types.ObjectId.isValid(query.budgetId)) {
+      conditions.push({ budgetId: new Types.ObjectId(query.budgetId) });
+    }
+    if (query.storageSpaceId && Types.ObjectId.isValid(query.storageSpaceId)) {
+      conditions.push({ storageSpaceId: new Types.ObjectId(query.storageSpaceId) });
+    }
+
+    // 5. Filter rentang waktu transactionDate
+    const dateFilter: any = {};
+    if (query.startDate) {
+      let start = new Date(query.startDate);
+      if (typeof query.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(query.startDate.trim())) {
+        start = new Date(`${query.startDate.trim()}T00:00:00.000Z`);
+      }
+      if (!isNaN(start.getTime())) {
+        dateFilter.$gte = start;
+      }
+    }
+    if (query.endDate) {
+      let end = new Date(query.endDate);
+      if (typeof query.endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(query.endDate.trim())) {
+        end = new Date(`${query.endDate.trim()}T23:59:59.999Z`);
+      }
+      if (!isNaN(end.getTime())) {
+        dateFilter.$lte = end;
+      }
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      conditions.push({ transactionDate: dateFilter });
+    }
+
+    const finalFilter = conditions.length === 1 ? conditions[0] : { $and: conditions };
+
+    // 6. Pagination (default limit = 50)
+    const page = Math.max(1, parseInt(String(query.page || 1), 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(String(query.limit || 50), 10) || 50));
+    const skip = (page - 1) * limit;
+
+    // 7. Eksekusi query data transaksi dan agregasi summary secara paralel
+    const [summaryResult, transactions] = await Promise.all([
+      Transaction.aggregate([
+        { $match: finalFilter },
+        {
+          $group: {
+            _id: null,
+            totalIncome: {
+              $sum: {
+                $cond: [{ $eq: ['$type', 'INCOME'] }, '$amount', 0],
+              },
+            },
+            totalExpense: {
+              $sum: {
+                $cond: [{ $eq: ['$type', 'EXPENSE'] }, '$amount', 0],
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Transaction.find(finalFilter)
+        .sort({ transactionDate: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('sourceFundingId', 'name type color icon')
+        .populate('destinationFundingId', 'name type color icon')
+        .populate('budgetId', 'name color icon amount spentAmount')
+        .populate('storageSpaceId', 'name color icon')
+        .lean(),
+    ]);
+
+    const count = summaryResult[0]?.count || 0;
+    const totalIncome = summaryResult[0]?.totalIncome || 0;
+    const totalExpense = summaryResult[0]?.totalExpense || 0;
+    const totalPages = Math.ceil(count / limit) || 1;
+
+    return {
+      transactions,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages,
+      },
+      summary: {
+        totalIncome,
+        totalExpense,
+        count,
+      },
+    };
   }
 }
 

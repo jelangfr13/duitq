@@ -72,6 +72,26 @@ export class TransactionController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/v1/transactions (Histori Transaksi, Update v1.2)
+   */
+  async getAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user?.id) {
+        throw new AppError('Akses ditolak. Sesi autentikasi tidak ditemukan.', 401);
+      }
+
+      const result = await transactionService.getAll(req.user.id, req.query as any);
+
+      return res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const transactionController = new TransactionController();

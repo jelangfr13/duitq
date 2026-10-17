@@ -9,9 +9,9 @@ import {
   Banknote,
   Plus,
   ArrowLeftRight,
-  MoreVertical,
+  Edit2,
+  Trash2,
   Check,
-  Archive,
   History,
   AlertCircle,
 } from 'lucide-react';
@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { WalletsSkeleton } from '@/components/ui/Skeleton';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 import { IFundingSource, FundingSourceType } from '@shared/types/funding-source';
 import { getErrorMessage } from '@/lib/api';
@@ -42,10 +43,13 @@ export default function WalletsPage() {
   // Ambil daftar dan mutasi
   const {
     fundingSources,
+    isLoading,
     createFundingSource,
     updateFundingSource,
+    deleteFundingSource,
     isCreating,
     isUpdating,
+    isDeleting,
   } = useFundingSources({
     includeTransactions: true,
     fundingSourceId: selectedFundingId,
@@ -119,13 +123,18 @@ export default function WalletsPage() {
     }
   };
 
-  const handleArchive = async (source: IFundingSource) => {
-    if (confirm(`Yakin ingin mengarsipkan "${source.name}"?`)) {
+  const handleDelete = async (source: IFundingSource) => {
+    if (
+      confirm(
+        `Yakin ingin menghapus Sumber Dana "${source.name}"? Pos anggaran yang terhubung dengan dompet ini juga akan dihapus secara otomatis.`
+      )
+    ) {
       try {
-        await updateFundingSource({
-          id: source._id,
-          dto: { isArchived: true },
-        });
+        await deleteFundingSource(source._id);
+        if (selectedFundingId === source._id) {
+          setSelectedFundingId(undefined);
+        }
+        setIsModalOpen(false);
       } catch (err) {
         alert(getErrorMessage(err));
       }
@@ -146,29 +155,33 @@ export default function WalletsPage() {
     }
   };
 
+  if (isLoading && (!fundingSources || fundingSources.length === 0)) {
+    return <WalletsSkeleton />;
+  }
+
   return (
     <div className="space-y-4 px-4 pt-4">
       {/* Segmented Control: Sumber Dana vs Ruang Penyimpanan (Bab 7.1) */}
-      <div className="flex p-1 bg-slate-200/80 rounded-xl text-xs font-semibold">
+      <div className="flex p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-xs font-semibold">
         <button
           type="button"
-          className="flex-1 py-2 rounded-lg bg-white text-slate-900 shadow-xs font-bold transition-all text-center"
+          className="flex-1 py-2 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-bold transition-all text-center"
         >
           Sumber Dana
         </button>
         <Link
-          href="/spaces"
-          className="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all text-center"
+          href="/budgets"
+          className="flex-1 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all text-center"
         >
-          Ruang Penyimpanan
+          Budgeting
         </Link>
       </div>
 
       {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Daftar Sumber Dana</h1>
-          <p className="text-[11px] text-slate-500">Rekening bank, e-wallet, dan uang tunai.</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">Daftar Sumber Dana</h1>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Rekening bank, e-wallet, dan uang tunai.</p>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -197,8 +210,8 @@ export default function WalletsPage() {
         {fundingSources.map((fs) => (
           <Card
             key={fs._id}
-            className={`p-4 bg-white border rounded-2xl shadow-xs transition-all relative overflow-hidden ${
-              selectedFundingId === fs._id ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-100'
+            className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs transition-all relative overflow-hidden ${
+              selectedFundingId === fs._id ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-100 dark:border-slate-800'
             }`}
           >
             {/* Color accent strip */}
@@ -216,8 +229,8 @@ export default function WalletsPage() {
                   {renderIcon(fs.type)}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">{fs.name}</h3>
-                  <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{fs.name}</h3>
+                  <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                     {fs.type}
                   </span>
                 </div>
@@ -228,18 +241,26 @@ export default function WalletsPage() {
                 <button
                   type="button"
                   onClick={() => openEditModal(fs)}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   title="Ubah"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(fs)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                  title="Hapus"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between pl-1">
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between pl-1">
               <div>
-                <p className="text-[10px] text-slate-400 font-medium">Saldo Terkini</p>
-                <p className="text-base font-extrabold text-slate-900 tabular-nums">
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Saldo Terkini</p>
+                <p className="text-base font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
                   {hideBalance ? '••••••••' : formatRupiah(fs.currentBalance)}
                 </p>
               </div>
@@ -249,7 +270,7 @@ export default function WalletsPage() {
                 onClick={() =>
                   setSelectedFundingId((prev) => (prev === fs._id ? undefined : fs._id))
                 }
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
               >
                 <History className="w-3.5 h-3.5" />
                 <span>{selectedFundingId === fs._id ? 'Tutup Mutasi' : 'Lihat Mutasi'}</span>
@@ -259,10 +280,10 @@ export default function WalletsPage() {
         ))}
 
         {fundingSources.length === 0 && (
-          <Card className="p-8 text-center bg-white border border-slate-100 rounded-2xl">
-            <Wallet className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-xs font-semibold text-slate-600">Belum Ada Sumber Dana</p>
-            <p className="text-[11px] text-slate-400 mt-1">
+          <Card className="p-8 text-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
+            <Wallet className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum Ada Sumber Dana</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
               Tambahkan rekening bank atau dompet pertama Anda.
             </p>
             <Button size="sm" onClick={openCreateModal} className="mt-4 text-xs">
@@ -274,10 +295,10 @@ export default function WalletsPage() {
 
       {/* Riwayat Mutasi Kronologis per Sumber Dana (FND-04) */}
       {selectedFundingId && (
-        <Card className="p-4 bg-white border border-slate-100 rounded-2xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <History className="w-4 h-4 text-blue-600" />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+              <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               Riwayat Mutasi Kronologis
             </h3>
             <button
@@ -382,11 +403,12 @@ export default function WalletsPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleArchive(editingSource)}
-                className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
-                leftIcon={<Archive className="w-3.5 h-3.5" />}
+                onClick={() => handleDelete(editingSource)}
+                className="text-xs text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                isLoading={isDeleting}
               >
-                Arsipkan
+                Hapus
               </Button>
             )}
             <Button

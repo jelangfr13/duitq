@@ -1,9 +1,11 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { invalidateFinanceQueries } from '@/lib/query-utils';
 import {
   CreateTransactionDTO,
   UpdateTransactionDTO,
+  TransactionFilterQueryDTO,
+  TransactionListResponse,
 } from '@shared/types/transaction';
 
 export const useTransactions = () => {
@@ -47,4 +49,14 @@ export const useTransactions = () => {
     deleteTransaction: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
   };
+};
+
+export const useTransactionHistory = (params: Partial<TransactionFilterQueryDTO> = {}) => {
+  return useQuery<TransactionListResponse>({
+    queryKey: ['transactions', params],
+    queryFn: async () => {
+      const res = await api.get('/transactions', { params });
+      return res.data?.data;
+    },
+  });
 };

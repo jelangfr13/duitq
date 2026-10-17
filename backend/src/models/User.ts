@@ -4,6 +4,8 @@ export interface IUserPreferences {
   currency: 'IDR';
   enableReceivablesModule: boolean;
   hideBalanceDefault: boolean;
+  darkMode: boolean;
+  themeColor: string;
 }
 
 export interface IUser {
@@ -11,11 +13,8 @@ export interface IUser {
   fullName: string;
   email: string;
   passwordHash: string;
-  preferences: {
-    currency: 'IDR';
-    enableReceivablesModule: boolean;
-    hideBalanceDefault: boolean;
-  };
+  avatarUrl?: string | null;
+  preferences: IUserPreferences;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +35,16 @@ const userPreferencesSchema = new Schema<IUserPreferences>(
     hideBalanceDefault: {
       type: Boolean,
       default: false,
+      required: true,
+    },
+    darkMode: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    themeColor: {
+      type: String,
+      default: '#2563EB',
       required: true,
     },
   },
@@ -59,12 +68,18 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
+    avatarUrl: {
+      type: String,
+      default: null,
+    },
     preferences: {
       type: userPreferencesSchema,
       default: () => ({
         currency: 'IDR',
         enableReceivablesModule: false,
         hideBalanceDefault: false,
+        darkMode: false,
+        themeColor: '#2563EB',
       }),
       required: true,
     },

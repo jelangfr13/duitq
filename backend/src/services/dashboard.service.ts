@@ -3,6 +3,7 @@ import {
   User,
   FundingSource,
   StorageSpace,
+  Budget,
   Transaction,
   Receivable,
 } from '../models';
@@ -46,13 +47,17 @@ export class DashboardService {
       user,
       fundingSources,
       storageSpaces,
+      budgets,
       activeReceivables,
       recentTransactions,
       aggregationResult,
     ] = await Promise.all([
       User.findById(userObjId).select('preferences fullName email'),
-      FundingSource.find({ userId: userObjId, isArchived: false }).sort({ createdAt: 1 }),
+      FundingSource.find({ userId: userObjId }).sort({ createdAt: 1 }),
       StorageSpace.find({ userId: userObjId, isArchived: false }).sort({ createdAt: 1 }),
+      Budget.find({ userId: userObjId, isArchived: false })
+        .populate('fundingSourceId', 'name color')
+        .sort({ createdAt: -1 }),
       Receivable.find({
         userId: userObjId,
         status: { $in: ['UNPAID', 'PARTIAL'] },
@@ -60,6 +65,7 @@ export class DashboardService {
       Transaction.find({ userId: userObjId })
         .populate('sourceFundingId', 'name color icon type')
         .populate('destinationFundingId', 'name color icon type')
+        .populate('budgetId', 'name color icon')
         .populate('storageSpaceId', 'name color icon')
         .sort({ transactionDate: -1, createdAt: -1 })
         .limit(10),
@@ -213,6 +219,32 @@ export class DashboardService {
       a.date.localeCompare(b.date)
     );
 
+    // 7. Olah Data Budgeting & Alokasi Anggaran
+    let totalBudgetAllocated = 0;
+    let totalBudgetSpent = 0;
+
+    const budgetDistribution = budgets.map((b) => {
+      const fs = b.fundingSourceId as any;
+      totalBudgetAllocated += b.amount;
+      totalBudgetSpent += b.spentAmount;
+      const remainingAmount = Math.max(0, b.amount - b.spentAmount);
+      const usagePercentage = b.amount > 0 ? Math.round((b.spentAmount / b.amount) * 100) : 0;
+      return {
+        _id: b._id.toString(),
+        name: b.name,
+        fundingSourceName: fs?.name || 'Sumber Dana',
+        fundingSourceColor: fs?.color || '#2563EB',
+        amount: b.amount,
+        spentAmount: b.spentAmount,
+        remainingAmount,
+        usagePercentage,
+        color: b.color,
+        icon: b.icon,
+      };
+    });
+
+    const totalBudgetRemaining = Math.max(0, totalBudgetAllocated - totalBudgetSpent);
+
     return {
       period: {
         startDate: start.toISOString(),
@@ -225,7 +257,11 @@ export class DashboardService {
         totalExpense,
         netCashFlow,
         totalActiveReceivables,
+        totalBudgetAllocated,
+        totalBudgetSpent,
+        totalBudgetRemaining,
       },
+      budgets: budgetDistribution,
       storageSpaces: spaceDistribution,
       cashFlowTrend,
       fundingSources,

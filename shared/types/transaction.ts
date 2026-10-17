@@ -18,6 +18,7 @@ export interface ITransaction {
   transactionDate: Date | string;
   sourceFundingId?: string | null;
   destinationFundingId?: string | null;
+  budgetId?: string | null;
   storageSpaceId?: string | null;
   spaceFlowType?: 'IN' | 'OUT' | null;
   receivableId?: string | null;
@@ -47,6 +48,7 @@ export const createTransactionSchema = z.object({
   transactionDate: z.coerce.date().default(() => new Date()),
   sourceFundingId: z.string().nullable().optional(),
   destinationFundingId: z.string().nullable().optional(),
+  budgetId: z.string().nullable().optional(),
   storageSpaceId: z.string().nullable().optional(),
   spaceFlowType: spaceFlowTypeSchema.nullable().optional(),
   receivableId: z.string().nullable().optional(),
@@ -64,6 +66,7 @@ export const updateTransactionSchema = z.object({
   transactionDate: z.coerce.date().optional(),
   sourceFundingId: z.string().nullable().optional(),
   destinationFundingId: z.string().nullable().optional(),
+  budgetId: z.string().nullable().optional(),
   storageSpaceId: z.string().nullable().optional(),
   spaceFlowType: spaceFlowTypeSchema.nullable().optional(),
   receivableId: z.string().nullable().optional(),
@@ -71,3 +74,66 @@ export const updateTransactionSchema = z.object({
 
 export type CreateTransactionDTO = z.infer<typeof createTransactionSchema>;
 export type UpdateTransactionDTO = z.infer<typeof updateTransactionSchema>;
+
+export const transactionFilterQuerySchema = z.object({
+  search: z.string().trim().optional(),
+  type: transactionTypeSchema.optional(),
+  fundingSourceId: z.string().optional(),
+  budgetId: z.string().optional(),
+  storageSpaceId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().optional().default(50),
+});
+
+export type TransactionFilterQueryDTO = z.infer<typeof transactionFilterQuerySchema>;
+
+export interface ITransactionPopulated
+  extends Omit<ITransaction, 'sourceFundingId' | 'destinationFundingId' | 'storageSpaceId' | 'budgetId'> {
+  sourceFundingId?: {
+    _id: string;
+    name: string;
+    type: string;
+    color: string;
+    icon: string;
+  } | null;
+  destinationFundingId?: {
+    _id: string;
+    name: string;
+    type: string;
+    color: string;
+    icon: string;
+  } | null;
+  budgetId?: {
+    _id: string;
+    name: string;
+    color: string;
+    icon: string;
+    amount?: number;
+    spentAmount?: number;
+  } | null;
+  storageSpaceId?: {
+    _id: string;
+    name: string;
+    color: string;
+    icon: string;
+  } | null;
+}
+
+export interface TransactionSummary {
+  totalIncome: number;
+  totalExpense: number;
+  count: number;
+}
+
+export interface TransactionListResponse {
+  transactions: (ITransaction | ITransactionPopulated)[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  summary: TransactionSummary;
+}

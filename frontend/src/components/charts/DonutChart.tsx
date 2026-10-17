@@ -8,15 +8,16 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { StorageSpaceDistribution } from '@shared/types/dashboard';
+import { StorageSpaceDistribution, BudgetDistribution } from '@shared/types/dashboard';
 import { formatRupiah } from '@/lib/format';
 import { PieChart as PieChartIcon } from 'lucide-react';
 
 interface DonutChartProps {
-  spaces: StorageSpaceDistribution[];
+  spaces?: StorageSpaceDistribution[];
+  budgets?: BudgetDistribution[];
 }
 
-export function DonutChart({ spaces }: DonutChartProps) {
+export function DonutChart({ spaces = [], budgets = [] }: DonutChartProps) {
   const [mounted, setMounted] = useState(false);
   const [activeMetric, setActiveMetric] = useState<'expense' | 'balance'>('expense');
 
@@ -32,27 +33,36 @@ export function DonutChart({ spaces }: DonutChartProps) {
     );
   }
 
-  // Siapkan data berdasarkan metrik terpilih
-  const chartData = spaces
-    .map((s) => ({
-      name: s.name,
-      value: activeMetric === 'expense' ? s.periodExpense || s.totalOut : Math.max(0, s.currentBalance),
-      color: s.color || '#3B82F6',
-      icon: s.icon,
-    }))
-    .filter((d) => d.value > 0);
+  // Siapkan data dari budgets jika tersedia, fallback ke spaces
+  const chartData = budgets.length > 0
+    ? budgets
+        .map((b) => ({
+          name: b.name,
+          value: activeMetric === 'expense' ? b.spentAmount : Math.max(0, b.remainingAmount),
+          color: b.color || '#3B82F6',
+          icon: b.icon,
+        }))
+        .filter((d) => d.value > 0)
+    : spaces
+        .map((s) => ({
+          name: s.name,
+          value: activeMetric === 'expense' ? s.periodExpense || s.totalOut : Math.max(0, s.currentBalance),
+          color: s.color || '#3B82F6',
+          icon: s.icon,
+        }))
+        .filter((d) => d.value > 0);
 
   const totalValue = chartData.reduce((acc, curr) => acc + curr.value, 0);
 
-  if (spaces.length === 0 || totalValue === 0) {
+  if ((budgets.length === 0 && spaces.length === 0) || totalValue === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-52 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 p-4 text-center">
-        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-2">
           <PieChartIcon className="w-5 h-5" />
         </div>
-        <p className="text-xs font-semibold text-slate-600">Belum Ada Data Ruang Penyimpanan</p>
-        <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
-          Catat pengeluaran atau alokasikan dana ke ruang penyimpanan untuk melihat grafik proporsi.
+        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum Ada Pengeluaran Anggaran</p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs">
+          Catat pengeluaran menggunakan pos anggaran untuk melihat grafik proporsi belanja.
         </p>
       </div>
     );
@@ -62,14 +72,14 @@ export function DonutChart({ spaces }: DonutChartProps) {
     <div className="space-y-4">
       {/* Tab toggle metrik: Pengeluaran vs Sisa Saldo */}
       <div className="flex items-center justify-between">
-        <div className="flex p-0.5 bg-slate-100 rounded-lg text-[11px] font-medium">
+        <div className="flex p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[11px] font-medium">
           <button
             type="button"
             onClick={() => setActiveMetric('expense')}
             className={`px-2.5 py-1 rounded-md transition-all ${
               activeMetric === 'expense'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
             Pengeluaran
@@ -79,15 +89,15 @@ export function DonutChart({ spaces }: DonutChartProps) {
             onClick={() => setActiveMetric('balance')}
             className={`px-2.5 py-1 rounded-md transition-all ${
               activeMetric === 'balance'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
             Sisa Saldo
           </button>
         </div>
-        <span className="text-[11px] font-medium text-slate-400 tabular-nums">
-          Total: <strong className="text-slate-700 font-bold">{formatRupiah(totalValue)}</strong>
+        <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 tabular-nums">
+          Total: <strong className="text-slate-700 dark:text-slate-200 font-bold">{formatRupiah(totalValue)}</strong>
         </span>
       </div>
 
@@ -101,7 +111,7 @@ export function DonutChart({ spaces }: DonutChartProps) {
                   const data = payload[0].payload;
                   const pct = totalValue > 0 ? ((data.value / totalValue) * 100).toFixed(1) : '0';
                   return (
-                    <div className="rounded-xl bg-slate-900 px-3 py-2 text-white shadow-lg text-xs">
+                    <div className="rounded-xl bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 px-3 py-2 text-white shadow-lg text-xs">
                       <p className="font-semibold">{data.name}</p>
                       <p className="text-emerald-400 tabular-nums font-bold mt-0.5">
                         {formatRupiah(data.value)} ({pct}%)
@@ -130,7 +140,7 @@ export function DonutChart({ spaces }: DonutChartProps) {
       </div>
 
       {/* Legend list */}
-      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
         {chartData.map((item, idx) => {
           const pct = ((item.value / totalValue) * 100).toFixed(0);
           return (
@@ -139,8 +149,8 @@ export function DonutChart({ spaces }: DonutChartProps) {
                 className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="truncate text-slate-600 flex-1">{item.name}</span>
-              <span className="text-[11px] font-bold text-slate-800 tabular-nums shrink-0">
+              <span className="truncate text-slate-600 dark:text-slate-400 flex-1">{item.name}</span>
+              <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 tabular-nums shrink-0">
                 {pct}%
               </span>
             </div>

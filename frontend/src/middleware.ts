@@ -18,8 +18,10 @@ export function middleware(request: NextRequest) {
   const isPrivateRoute =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/wallets') ||
+    pathname.startsWith('/budgets') ||
     pathname.startsWith('/spaces') ||
     pathname.startsWith('/receivables') ||
+    pathname.startsWith('/transactions') ||
     pathname.startsWith('/settings');
 
   // Jika mengakses root '/', alihkan ke dashboard (atau login via middleware rule di bawah)
@@ -56,8 +58,10 @@ export const config = {
     '/reset-password',
     '/dashboard/:path*',
     '/wallets/:path*',
+    '/budgets/:path*',
     '/spaces/:path*',
     '/receivables/:path*',
+    '/transactions/:path*',
     '/settings/:path*',
   ],
 };

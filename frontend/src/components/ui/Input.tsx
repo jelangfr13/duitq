@@ -34,14 +34,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs font-semibold text-slate-700 tracking-wide"
+            className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wide"
           >
             {label}
           </label>
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3.5 text-slate-400 pointer-events-none flex items-center">
+            <div className="absolute left-3.5 text-slate-400 dark:text-slate-500 pointer-events-none flex items-center">
               {leftIcon}
             </div>
           )}
@@ -49,12 +49,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             type={inputType}
-            className={`w-full h-11 px-3.5 text-sm rounded-xl border bg-white transition-all text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:cursor-not-allowed ${
+            className={`w-full h-11 px-3.5 text-sm rounded-xl border bg-white dark:bg-slate-900 transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:cursor-not-allowed ${
               leftIcon ? 'pl-10' : ''
             } ${isPassword || rightIcon ? 'pr-11' : ''} ${
               error
-                ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-                : 'border-slate-200 focus:border-blue-600 focus:ring-blue-500/20'
+                ? 'border-rose-300 dark:border-rose-700 focus:border-rose-500 focus:ring-rose-500/20'
+                : 'border-slate-200 dark:border-slate-800 focus:border-blue-600 dark:focus:border-blue-500 focus:ring-blue-500/20'
             } ${className}`}
             {...props}
           />

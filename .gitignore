@@ -5,9 +5,17 @@
 !.env.example
 !**/.env.example
 
-# Dependencies
+# Dependencies & Lockfiles
 node_modules/
 */node_modules/
+package-lock.json
+*/package-lock.json
+pnpm-lock.yaml
+*/pnpm-lock.yaml
+pnpm-workspace.yaml
+*/pnpm-workspace.yaml
+yarn.lock
+*/yarn.lock
 
 # Production builds
 dist/

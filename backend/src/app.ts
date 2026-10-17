@@ -11,6 +11,7 @@ import transactionRoutes from './routes/transaction.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import userRoutes from './routes/user.routes';
 import receivableRoutes from './routes/receivable.routes';
+import { budgetRoutes } from './routes/budget.routes';
 
 const app: Application = express();
 
@@ -46,7 +47,7 @@ app.use(
 );
 
 // Body and cookie parsing
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 // Base API v1 Router
@@ -72,6 +73,9 @@ apiV1Router.use('/funding-sources', fundingSourceRoutes);
 
 // Storage Spaces Routes (Bab 6 PRD)
 apiV1Router.use('/storage-spaces', storageSpaceRoutes);
+
+// Budgets Routes (Sistem Budgeting Baru)
+apiV1Router.use('/budgets', budgetRoutes);
 
 // Transactions Routes (Bab 6 PRD)
 apiV1Router.use('/transactions', transactionRoutes);
