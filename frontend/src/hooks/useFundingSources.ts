@@ -48,6 +48,16 @@ export const useFundingSources = (options?: FundingSourcesFilter) => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/funding-sources/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateFinanceQueries(queryClient);
+    },
+  });
+
   return {
     ...fundingSourcesQuery,
     fundingSources: fundingSourcesQuery.data || [],
@@ -55,5 +65,7 @@ export const useFundingSources = (options?: FundingSourcesFilter) => {
     isCreating: createMutation.isPending,
     updateFundingSource: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
+    deleteFundingSource: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };

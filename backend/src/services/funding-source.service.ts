@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { FundingSource, Transaction } from '../models';
+import { FundingSource, Transaction, Budget } from '../models';
 import { AppError } from '../middlewares/error.middleware';
 import {
   CreateFundingSourceDTO,
@@ -29,10 +29,6 @@ export class FundingSourceService {
         throw new AppError('Format ID sumber dana tidak valid', 400);
       }
       filter._id = new Types.ObjectId(options.fundingSourceId);
-    }
-
-    if (!options.includeArchived) {
-      filter.isArchived = false;
     }
 
     const sources = await FundingSource.find(filter).sort({ createdAt: 1 });
@@ -105,7 +101,7 @@ export class FundingSourceService {
   }
 
   /**
-   * Bab 6: Perbarui nama, tipe, warna, ikon Sumber Dana atau arsipkan (isArchived)
+   * Perbarui nama, tipe, warna, ikon Sumber Dana
    */
   async update(userId: string, id: string, dto: UpdateFundingSourceDTO) {
     if (!Types.ObjectId.isValid(id)) {
@@ -126,10 +122,45 @@ export class FundingSourceService {
     if (dto.type !== undefined) source.type = dto.type;
     if (dto.color !== undefined) source.color = dto.color.trim();
     if (dto.icon !== undefined) source.icon = dto.icon.trim();
-    if (dto.isArchived !== undefined) source.isArchived = dto.isArchived;
 
     await source.save();
     return source;
+  }
+
+  /**
+   * Hapus Sumber Dana
+   * Menghapus Sumber Dana dan seluruh pos anggaran (Budget) yang terhubung dengannya.
+   */
+  async delete(userId: string, id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new AppError('Format ID sumber dana tidak valid', 400);
+    }
+
+    const userObjId = new Types.ObjectId(userId);
+    const sourceObjId = new Types.ObjectId(id);
+
+    const source = await FundingSource.findOne({
+      _id: sourceObjId,
+      userId: userObjId,
+    });
+
+    if (!source) {
+      throw new AppError('Sumber dana tidak ditemukan', 404);
+    }
+
+    // 1. Hapus seluruh pos anggaran (Budget) yang terhubung dengan Sumber Dana ini
+    await Budget.deleteMany({
+      fundingSourceId: sourceObjId,
+      userId: userObjId,
+    });
+
+    // 2. Hapus dokumen Sumber Dana
+    await FundingSource.deleteOne({
+      _id: sourceObjId,
+      userId: userObjId,
+    });
+
+    return { message: 'Sumber dana berhasil dihapus' };
   }
 }
 

@@ -18,6 +18,7 @@ export interface ITransaction {
   transactionDate: Date;
   sourceFundingId?: Types.ObjectId | null;
   destinationFundingId?: Types.ObjectId | null;
+  budgetId?: Types.ObjectId | null;
   storageSpaceId?: Types.ObjectId | null;
   spaceFlowType?: 'IN' | 'OUT' | null;
   receivableId?: Types.ObjectId | null;
@@ -76,6 +77,11 @@ const transactionSchema = new Schema<ITransaction>(
       ref: 'FundingSource',
       default: null,
     },
+    budgetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Budget',
+      default: null,
+    },
     storageSpaceId: {
       type: Schema.Types.ObjectId,
       ref: 'StorageSpace',
@@ -102,6 +108,7 @@ const transactionSchema = new Schema<ITransaction>(
 transactionSchema.index({ userId: 1, transactionDate: -1 });
 transactionSchema.index({ userId: 1, sourceFundingId: 1 });
 transactionSchema.index({ userId: 1, destinationFundingId: 1 });
+transactionSchema.index({ userId: 1, budgetId: 1 });
 transactionSchema.index({ userId: 1, storageSpaceId: 1 });
 
 export const Transaction =

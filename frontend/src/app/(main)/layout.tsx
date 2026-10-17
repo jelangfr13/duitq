@@ -7,13 +7,23 @@ import {
   LayoutDashboard,
   Wallet,
   Plus,
+  ReceiptText,
   HandCoins,
-  History,
   Settings,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/lib/store';
-import { QuickAddTransactionSheet } from '@/components/transactions/QuickAddTransactionSheet';
+import { useTheme } from '@/components/theme/ThemeProvider';
+
+// Lazy load BottomSheet formulir transaksi
+const QuickAddTransactionSheet = dynamic(
+  () =>
+    import('@/components/transactions/QuickAddTransactionSheet').then(
+      (mod) => mod.QuickAddTransactionSheet
+    ),
+  { ssr: false }
+);
 
 export default function MainLayout({
   children,
@@ -23,16 +33,19 @@ export default function MainLayout({
   const pathname = usePathname();
   const { user } = useAuth();
   const { openQuickAdd } = useAppStore();
+  const { themeColor } = useTheme();
 
-  const isReceivablesEnabled = user?.preferences?.enableReceivablesModule ?? true;
+  const isReceivablesEnabled = user?.preferences?.enableReceivablesModule ?? false;
 
   const isDashboardActive = pathname === '/dashboard';
-  const isWalletsOrSpacesActive = pathname === '/wallets' || pathname === '/spaces';
+  const isWalletsOrSpacesActive =
+    pathname === '/wallets' || pathname === '/budgets' || pathname === '/spaces';
+  const isTransactionsActive = pathname === '/transactions';
   const isReceivablesActive = pathname === '/receivables';
   const isSettingsActive = pathname === '/settings';
 
   return (
-    <div className="max-w-md mx-auto min-h-dvh bg-slate-50 relative pb-20 shadow-sm flex flex-col">
+    <div className="max-w-md mx-auto min-h-dvh bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative pb-20 shadow-sm flex flex-col transition-colors duration-150">
       {/* Konten Halaman */}
       <main className="flex-1 w-full pb-4">
         {children}
@@ -41,35 +54,37 @@ export default function MainLayout({
       {/* Floating Quick Add Transaction Sheet Drawer */}
       <QuickAddTransactionSheet />
 
-      {/* Bottom Navigation Bar (Bab 7.1) */}
+      {/* Bottom Navigation Bar (Bab 7.1 & Update v1.2) */}
       <nav
         aria-label="Bottom Navigation"
-        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 backdrop-blur-md border-t border-slate-100 px-3 py-1.5 z-40 flex items-center justify-around shadow-xs"
+        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-2 py-1.5 z-40 flex items-center justify-around shadow-xs transition-colors duration-150"
       >
         {/* 1. Beranda */}
         <Link
           href="/dashboard"
+          style={isDashboardActive ? { color: themeColor } : undefined}
           className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
             isDashboardActive
-              ? 'text-blue-600 font-semibold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'font-semibold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
           }`}
         >
           <LayoutDashboard className={`w-5 h-5 ${isDashboardActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-1 tracking-tight">Beranda</span>
+          <span className="text-[10px] mt-0.5 tracking-tight">Beranda</span>
         </Link>
 
         {/* 2. Dompet & Ruang */}
         <Link
           href="/wallets"
+          style={isWalletsOrSpacesActive ? { color: themeColor } : undefined}
           className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
             isWalletsOrSpacesActive
-              ? 'text-blue-600 font-semibold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'font-semibold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
           }`}
         >
           <Wallet className={`w-5 h-5 ${isWalletsOrSpacesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-1 tracking-tight">Dompet</span>
+          <span className="text-[10px] mt-0.5 tracking-tight">Dompet</span>
         </Link>
 
         {/* 3. Tombol [+] Catat Cepat (Floating Center Action Button) */}
@@ -77,51 +92,56 @@ export default function MainLayout({
           <button
             type="button"
             onClick={() => openQuickAdd('EXPENSE')}
-            className="w-13 h-13 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-blue-600/35 border-4 border-slate-50 transition-all cursor-pointer"
+            style={{ backgroundColor: themeColor }}
+            className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg active:scale-95 border-4 border-slate-50 dark:border-slate-950 transition-all cursor-pointer"
             aria-label="Catat Transaksi Cepat"
           >
             <Plus className="w-6 h-6 stroke-[2.8]" />
           </button>
         </div>
 
-        {/* 4. Piutang (Dinamis: jika aktif tampilkan /receivables, jika tidak tampilkan Riwayat) */}
-        {isReceivablesEnabled ? (
+        {/* 4. Histori Transaksi (Selalu Tersedia) */}
+        <Link
+          href="/transactions"
+          style={isTransactionsActive ? { color: themeColor } : undefined}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            isTransactionsActive
+              ? 'font-semibold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        >
+          <ReceiptText className={`w-5 h-5 ${isTransactionsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">Histori</span>
+        </Link>
+
+        {/* 5. Piutang (Jika Fitur Piutang Diaktifkan) */}
+        {isReceivablesEnabled && (
           <Link
             href="/receivables"
+            style={isReceivablesActive ? { color: themeColor } : undefined}
             className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
               isReceivablesActive
-                ? 'text-blue-600 font-semibold'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'font-semibold'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
             }`}
           >
             <HandCoins className={`w-5 h-5 ${isReceivablesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-            <span className="text-[10px] mt-1 tracking-tight">Piutang</span>
-          </Link>
-        ) : (
-          <Link
-            href="/dashboard#transaksi"
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-              pathname === '/dashboard'
-                ? 'text-slate-600 font-semibold'
-                : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <History className="w-5 h-5 stroke-2" />
-            <span className="text-[10px] mt-1 tracking-tight">Riwayat</span>
+            <span className="text-[10px] mt-0.5 tracking-tight">Piutang</span>
           </Link>
         )}
 
-        {/* 5. Profil & Pengaturan */}
+        {/* 6. Pengaturan / Profil */}
         <Link
           href="/settings"
+          style={isSettingsActive ? { color: themeColor } : undefined}
           className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
             isSettingsActive
-              ? 'text-blue-600 font-semibold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'font-semibold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
           }`}
         >
           <Settings className={`w-5 h-5 ${isSettingsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-1 tracking-tight">Profil</span>
+          <span className="text-[10px] mt-0.5 tracking-tight">Profil</span>
         </Link>
       </nav>
     </div>

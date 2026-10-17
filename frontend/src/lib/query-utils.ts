@@ -8,5 +8,7 @@ export const invalidateFinanceQueries = (queryClient: QueryClient) => {
   queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   queryClient.invalidateQueries({ queryKey: ['funding-sources'] });
   queryClient.invalidateQueries({ queryKey: ['storage-spaces'] });
+  queryClient.invalidateQueries({ queryKey: ['budgets'] });
   queryClient.invalidateQueries({ queryKey: ['receivables'] });
+  queryClient.invalidateQueries({ queryKey: ['transactions'] });
 };

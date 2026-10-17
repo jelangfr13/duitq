@@ -28,13 +28,19 @@ router.post(
 );
 
 /**
- * 3. PATCH /api/v1/funding-sources/:id (Bab 6)
- * Perbarui nama, tipe, warna, ikon Sumber Dana atau arsipkan (isArchived)
+ * 3. PATCH /api/v1/funding-sources/:id
+ * Perbarui nama, tipe, warna, ikon Sumber Dana
  */
 router.patch(
   '/:id',
   validate(updateFundingSourceSchema),
   (req, res, next) => fundingSourceController.update(req, res, next)
 );
+
+/**
+ * 4. DELETE /api/v1/funding-sources/:id
+ * Hapus Sumber Dana dan seluruh pos anggaran yang terhubung
+ */
+router.delete('/:id', (req, res, next) => fundingSourceController.delete(req, res, next));
 
 export default router;

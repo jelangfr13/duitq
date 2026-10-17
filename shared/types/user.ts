@@ -4,6 +4,8 @@ export interface IUserPreferences {
   currency: 'IDR';
   enableReceivablesModule: boolean;
   hideBalanceDefault: boolean;
+  darkMode: boolean;
+  themeColor: string;
 }
 
 export interface IUser {
@@ -11,6 +13,7 @@ export interface IUser {
   fullName: string;
   email: string;
   passwordHash?: string;
+  avatarUrl?: string | null;
   preferences: IUserPreferences;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -54,12 +57,27 @@ export const resetPasswordSchema = z.object({
 });
 
 export const updatePreferencesSchema = z.object({
+  fullName: z.string().trim().min(1, 'Nama lengkap tidak boleh kosong').optional(),
+  avatarUrl: z.string().nullable().optional(),
   enableReceivablesModule: z.boolean().optional(),
   hideBalanceDefault: z.boolean().optional(),
+  darkMode: z.boolean().optional(),
+  themeColor: z.string().optional(),
+  preferences: z
+    .object({
+      enableReceivablesModule: z.boolean().optional(),
+      hideBalanceDefault: z.boolean().optional(),
+      darkMode: z.boolean().optional(),
+      themeColor: z.string().optional(),
+    })
+    .optional(),
 });
+
+export const updateUserProfileSchema = updatePreferencesSchema;
 
 export type RegisterDTO = z.infer<typeof registerSchema>;
 export type LoginDTO = z.infer<typeof loginSchema>;
 export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
 export type UpdatePreferencesDTO = z.infer<typeof updatePreferencesSchema>;
+export type UpdateUserProfileDTO = z.infer<typeof updateUserProfileSchema>;

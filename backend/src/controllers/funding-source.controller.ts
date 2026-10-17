@@ -81,6 +81,26 @@ export class FundingSourceController {
       next(error);
     }
   }
+
+  /**
+   * DELETE /api/v1/funding-sources/:id
+   */
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user?.id) {
+        throw new AppError('Akses ditolak. Sesi autentikasi tidak ditemukan.', 401);
+      }
+
+      await fundingSourceService.delete(req.user.id, req.params.id);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Sumber dana berhasil dihapus',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const fundingSourceController = new FundingSourceController();

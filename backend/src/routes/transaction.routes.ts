@@ -1,15 +1,26 @@
 import { Router } from 'express';
 import { transactionController } from '../controllers/transaction.controller';
-import { requireAuth, validate } from '../middlewares';
+import { requireAuth, validate, validateQuery } from '../middlewares';
 import {
   createTransactionSchema,
   updateTransactionSchema,
+  transactionFilterQuerySchema,
 } from '../../../shared/types/transaction';
 
 const router = Router();
 
 // Seluruh endpoint transaksi dilindungi autentikasi JWT (AUTH-04)
 router.use(requireAuth);
+
+/**
+ * 0. GET /api/v1/transactions (Histori Transaksi, Update v1.2)
+ * Ambil histori transaksi dengan filter (search, type, fundingSourceId, storageSpaceId, range date, pagination, summary)
+ */
+router.get(
+  '/',
+  validateQuery(transactionFilterQuerySchema),
+  (req, res, next) => transactionController.getAll(req, res, next)
+);
 
 /**
  * 1. POST /api/v1/transactions (TRX-01, TRX-02, FND-02, FND-03, SPC-02, SPC-03, Bab 6)

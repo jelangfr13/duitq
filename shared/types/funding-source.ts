@@ -11,7 +11,7 @@ export interface IFundingSource {
   currentBalance: number;
   color: string;
   icon: string;
-  isArchived: boolean;
+  isArchived?: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

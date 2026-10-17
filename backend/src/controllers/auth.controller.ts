@@ -51,12 +51,12 @@ export class AuthController {
       // Terbitkan accessToken dan refreshToken di dalam HttpOnly, Secure, SameSite=Lax Cookie (AUTH-03)
       res.cookie('accessToken', accessToken, {
         ...getBaseCookieOptions(),
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+        maxAge: 1 * 24 * 60 * 60 * 1000, // 1 hari
       });
 
       res.cookie('refreshToken', refreshToken, {
         ...getBaseCookieOptions(),
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 hari
+        maxAge: 1 * 24 * 60 * 60 * 1000, // 1 hari
       });
 
       return res.status(200).json({

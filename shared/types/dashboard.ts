@@ -16,6 +16,19 @@ export interface StorageSpaceDistribution {
   usagePercentage: number;
 }
 
+export interface BudgetDistribution {
+  _id: string;
+  name: string;
+  fundingSourceName: string;
+  fundingSourceColor?: string;
+  amount: number;
+  spentAmount: number;
+  remainingAmount: number;
+  usagePercentage: number;
+  color?: string;
+  icon?: string;
+}
+
 export interface CashFlowTrendItem {
   date: string;
   income: number;
@@ -35,7 +48,11 @@ export interface DashboardSummary {
     totalExpense: number;
     netCashFlow: number;
     totalActiveReceivables: number;
+    totalBudgetAllocated?: number;
+    totalBudgetSpent?: number;
+    totalBudgetRemaining?: number;
   };
+  budgets?: BudgetDistribution[];
   storageSpaces: StorageSpaceDistribution[];
   cashFlowTrend: CashFlowTrendItem[];
   fundingSources: IFundingSource[];

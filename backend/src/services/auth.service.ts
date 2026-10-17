@@ -32,10 +32,13 @@ export class AuthService {
       fullName: dto.fullName.trim(),
       email,
       passwordHash,
+      avatarUrl: null,
       preferences: {
         currency: 'IDR',
         enableReceivablesModule: false,
         hideBalanceDefault: false,
+        darkMode: false,
+        themeColor: '#2563EB',
       },
     });
 
@@ -43,6 +46,7 @@ export class AuthService {
       id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
+      avatarUrl: user.avatarUrl ?? null,
       preferences: user.preferences,
       createdAt: user.createdAt,
     };
@@ -72,11 +76,11 @@ export class AuthService {
     };
 
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: '7d',
+      expiresIn: (env.JWT_EXPIRES_IN as any) || '1d',
     });
 
     const refreshToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: '30d',
+      expiresIn: '1d',
     });
 
     return {
@@ -84,7 +88,14 @@ export class AuthService {
         id: user._id.toString(),
         fullName: user.fullName,
         email: user.email,
-        preferences: user.preferences,
+        avatarUrl: user.avatarUrl ?? null,
+        preferences: {
+          currency: user.preferences?.currency ?? 'IDR',
+          enableReceivablesModule: !!user.preferences?.enableReceivablesModule,
+          hideBalanceDefault: !!user.preferences?.hideBalanceDefault,
+          darkMode: !!user.preferences?.darkMode,
+          themeColor: user.preferences?.themeColor || '#2563EB',
+        },
       },
       accessToken,
       refreshToken,
@@ -104,7 +115,14 @@ export class AuthService {
       id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
-      preferences: user.preferences,
+      avatarUrl: user.avatarUrl ?? null,
+      preferences: {
+        currency: user.preferences?.currency ?? 'IDR',
+        enableReceivablesModule: !!user.preferences?.enableReceivablesModule,
+        hideBalanceDefault: !!user.preferences?.hideBalanceDefault,
+        darkMode: !!user.preferences?.darkMode,
+        themeColor: user.preferences?.themeColor || '#2563EB',
+      },
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
