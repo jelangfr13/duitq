@@ -51,12 +51,18 @@ export const useTransactions = () => {
   };
 };
 
-export const useTransactionHistory = (params: Partial<TransactionFilterQueryDTO> = {}) => {
+export const useTransactionHistory = (
+  params: Partial<TransactionFilterQueryDTO> = {},
+  options?: { enabled?: boolean }
+) => {
   return useQuery<TransactionListResponse>({
     queryKey: ['transactions', params],
     queryFn: async () => {
       const res = await api.get('/transactions', { params });
       return res.data?.data;
     },
+    enabled: options?.enabled !== undefined ? options.enabled : true,
+    placeholderData: (previousData) => previousData,
+    staleTime: 30 * 1000,
   });
 };

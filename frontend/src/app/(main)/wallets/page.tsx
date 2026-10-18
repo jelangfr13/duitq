@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { WalletsSkeleton } from '@/components/ui/Skeleton';
-import { formatRupiah, formatDateTime } from '@/lib/format';
+import { formatRupiah } from '@/lib/format';
 import { IFundingSource, FundingSourceType } from '@shared/types/funding-source';
 import { getErrorMessage } from '@/lib/api';
 
@@ -38,9 +38,8 @@ const COLOR_OPTIONS = [
 
 export default function WalletsPage() {
   const { hideBalance, openQuickAdd } = useAppStore();
-  const [selectedFundingId, setSelectedFundingId] = useState<string | undefined>();
 
-  // Ambil daftar dan mutasi
+  // Ambil seluruh daftar sumber dana
   const {
     fundingSources,
     isLoading,
@@ -50,10 +49,7 @@ export default function WalletsPage() {
     isCreating,
     isUpdating,
     isDeleting,
-  } = useFundingSources({
-    includeTransactions: true,
-    fundingSourceId: selectedFundingId,
-  });
+  } = useFundingSources();
 
   // Modal State Tambah / Edit Sumber Dana (FND-01)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,6 +60,7 @@ export default function WalletsPage() {
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
   const [icon, setIcon] = useState('Landmark');
   const [error, setError] = useState<string | null>(null);
+
 
   const openCreateModal = () => {
     setEditingSource(null);
@@ -131,9 +128,6 @@ export default function WalletsPage() {
     ) {
       try {
         await deleteFundingSource(source._id);
-        if (selectedFundingId === source._id) {
-          setSelectedFundingId(undefined);
-        }
         setIsModalOpen(false);
       } catch (err) {
         alert(getErrorMessage(err));
@@ -210,9 +204,7 @@ export default function WalletsPage() {
         {fundingSources.map((fs) => (
           <Card
             key={fs._id}
-            className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-xs transition-all relative overflow-hidden ${
-              selectedFundingId === fs._id ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-100 dark:border-slate-800'
-            }`}
+            className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xs transition-all relative overflow-hidden"
           >
             {/* Color accent strip */}
             <div
@@ -265,16 +257,13 @@ export default function WalletsPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedFundingId((prev) => (prev === fs._id ? undefined : fs._id))
-                }
-                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
+              <Link
+                href={`/wallets/${fs._id}`}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
               >
                 <History className="w-3.5 h-3.5" />
-                <span>{selectedFundingId === fs._id ? 'Tutup Mutasi' : 'Lihat Mutasi'}</span>
-              </button>
+                <span>Lihat Mutasi</span>
+              </Link>
             </div>
           </Card>
         ))}
@@ -293,31 +282,7 @@ export default function WalletsPage() {
         )}
       </div>
 
-      {/* Riwayat Mutasi Kronologis per Sumber Dana (FND-04) */}
-      {selectedFundingId && (
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-              <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              Riwayat Mutasi Kronologis
-            </h3>
-            <button
-              type="button"
-              onClick={() => setSelectedFundingId(undefined)}
-              className="text-[11px] text-slate-400 hover:text-slate-600"
-            >
-              Tutup
-            </button>
-          </div>
 
-          <p className="text-[11px] text-slate-500">
-            Menampilkan seluruh uang masuk, uang keluar, transfer, dan piutang terkait rekening ini.
-          </p>
-          <div className="text-center py-4 text-xs text-slate-400">
-            Mutasi terbaru tersinkronisasi otomatis dengan Dashboard.
-          </div>
-        </Card>
-      )}
 
       {/* Modal / Bottom Sheet Form Tambah & Edit Sumber Dana (FND-01) */}
       <BottomSheet

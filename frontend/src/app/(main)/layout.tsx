@@ -25,11 +25,7 @@ const QuickAddTransactionSheet = dynamic(
   { ssr: false }
 );
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { openQuickAdd } = useAppStore();
@@ -39,11 +35,109 @@ export default function MainLayout({
 
   const isDashboardActive = pathname === '/dashboard';
   const isWalletsOrSpacesActive =
-    pathname === '/wallets' || pathname === '/budgets' || pathname === '/spaces';
+    pathname.startsWith('/wallets') || pathname === '/budgets' || pathname === '/spaces';
   const isTransactionsActive = pathname === '/transactions';
   const isReceivablesActive = pathname === '/receivables';
   const isSettingsActive = pathname === '/settings';
 
+  return (
+    <nav
+      aria-label="Bottom Navigation"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-2 py-1.5 z-40 flex items-center justify-around shadow-xs transition-colors duration-150"
+    >
+      {/* 1. Beranda */}
+      <Link
+        href="/dashboard"
+        style={isDashboardActive ? { color: themeColor } : undefined}
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          isDashboardActive
+            ? 'font-semibold'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
+      >
+        <LayoutDashboard className={`w-5 h-5 ${isDashboardActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+        <span className="text-[10px] mt-0.5 tracking-tight">Beranda</span>
+      </Link>
+
+      {/* 2. Dompet & Ruang */}
+      <Link
+        href="/wallets"
+        style={isWalletsOrSpacesActive ? { color: themeColor } : undefined}
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          isWalletsOrSpacesActive
+            ? 'font-semibold'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
+      >
+        <Wallet className={`w-5 h-5 ${isWalletsOrSpacesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+        <span className="text-[10px] mt-0.5 tracking-tight">Dompet</span>
+      </Link>
+
+      {/* 3. Tombol [+] Catat Cepat (Floating Center Action Button) */}
+      <div className="flex-1 flex justify-center -mt-5">
+        <button
+          type="button"
+          onClick={() => openQuickAdd('EXPENSE')}
+          style={{ backgroundColor: themeColor }}
+          className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg active:scale-95 border-4 border-slate-50 dark:border-slate-950 transition-all cursor-pointer"
+          aria-label="Catat Transaksi Cepat"
+        >
+          <Plus className="w-6 h-6 stroke-[2.8]" />
+        </button>
+      </div>
+
+      {/* 4. Histori Transaksi (Selalu Tersedia) */}
+      <Link
+        href="/transactions"
+        style={isTransactionsActive ? { color: themeColor } : undefined}
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          isTransactionsActive
+            ? 'font-semibold'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
+      >
+        <ReceiptText className={`w-5 h-5 ${isTransactionsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+        <span className="text-[10px] mt-0.5 tracking-tight">Histori</span>
+      </Link>
+
+      {/* 5. Piutang (Jika Fitur Piutang Diaktifkan) */}
+      {isReceivablesEnabled && (
+        <Link
+          href="/receivables"
+          style={isReceivablesActive ? { color: themeColor } : undefined}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            isReceivablesActive
+              ? 'font-semibold'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+          }`}
+        >
+          <HandCoins className={`w-5 h-5 ${isReceivablesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+          <span className="text-[10px] mt-0.5 tracking-tight">Piutang</span>
+        </Link>
+      )}
+
+      {/* 6. Pengaturan / Profil */}
+      <Link
+        href="/settings"
+        style={isSettingsActive ? { color: themeColor } : undefined}
+        className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          isSettingsActive
+            ? 'font-semibold'
+            : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
+      >
+        <Settings className={`w-5 h-5 ${isSettingsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
+        <span className="text-[10px] mt-0.5 tracking-tight">Profil</span>
+      </Link>
+    </nav>
+  );
+}
+
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="max-w-md mx-auto min-h-dvh bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative pb-20 shadow-sm flex flex-col transition-colors duration-150">
       {/* Konten Halaman */}
@@ -54,96 +148,11 @@ export default function MainLayout({
       {/* Floating Quick Add Transaction Sheet Drawer */}
       <QuickAddTransactionSheet />
 
-      {/* Bottom Navigation Bar (Bab 7.1 & Update v1.2) */}
-      <nav
-        aria-label="Bottom Navigation"
-        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-2 py-1.5 z-40 flex items-center justify-around shadow-xs transition-colors duration-150"
-      >
-        {/* 1. Beranda */}
-        <Link
-          href="/dashboard"
-          style={isDashboardActive ? { color: themeColor } : undefined}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-            isDashboardActive
-              ? 'font-semibold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <LayoutDashboard className={`w-5 h-5 ${isDashboardActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-0.5 tracking-tight">Beranda</span>
-        </Link>
-
-        {/* 2. Dompet & Ruang */}
-        <Link
-          href="/wallets"
-          style={isWalletsOrSpacesActive ? { color: themeColor } : undefined}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-            isWalletsOrSpacesActive
-              ? 'font-semibold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <Wallet className={`w-5 h-5 ${isWalletsOrSpacesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-0.5 tracking-tight">Dompet</span>
-        </Link>
-
-        {/* 3. Tombol [+] Catat Cepat (Floating Center Action Button) */}
-        <div className="flex-1 flex justify-center -mt-5">
-          <button
-            type="button"
-            onClick={() => openQuickAdd('EXPENSE')}
-            style={{ backgroundColor: themeColor }}
-            className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg active:scale-95 border-4 border-slate-50 dark:border-slate-950 transition-all cursor-pointer"
-            aria-label="Catat Transaksi Cepat"
-          >
-            <Plus className="w-6 h-6 stroke-[2.8]" />
-          </button>
-        </div>
-
-        {/* 4. Histori Transaksi (Selalu Tersedia) */}
-        <Link
-          href="/transactions"
-          style={isTransactionsActive ? { color: themeColor } : undefined}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-            isTransactionsActive
-              ? 'font-semibold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <ReceiptText className={`w-5 h-5 ${isTransactionsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-0.5 tracking-tight">Histori</span>
-        </Link>
-
-        {/* 5. Piutang (Jika Fitur Piutang Diaktifkan) */}
-        {isReceivablesEnabled && (
-          <Link
-            href="/receivables"
-            style={isReceivablesActive ? { color: themeColor } : undefined}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-              isReceivablesActive
-                ? 'font-semibold'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
-          >
-            <HandCoins className={`w-5 h-5 ${isReceivablesActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-            <span className="text-[10px] mt-0.5 tracking-tight">Piutang</span>
-          </Link>
-        )}
-
-        {/* 6. Pengaturan / Profil */}
-        <Link
-          href="/settings"
-          style={isSettingsActive ? { color: themeColor } : undefined}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-            isSettingsActive
-              ? 'font-semibold'
-              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <Settings className={`w-5 h-5 ${isSettingsActive ? 'stroke-[2.4]' : 'stroke-2'}`} />
-          <span className="text-[10px] mt-0.5 tracking-tight">Profil</span>
-        </Link>
-      </nav>
+      {/* Bottom Navigation Bar di dalam Suspense untuk Next.js Prerendering */}
+      <React.Suspense fallback={null}>
+        <BottomNav />
+      </React.Suspense>
     </div>
   );
 }
+

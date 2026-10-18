@@ -428,7 +428,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
             <span className="text-slate-500 dark:text-slate-400">Versi Aplikasi</span>
-            <span className="text-slate-600 dark:text-slate-400 font-mono font-medium">v1.2.0</span>
+            <span className="text-slate-600 dark:text-slate-400 font-mono font-medium">v1.2.1</span>
           </div>
         </Card>
       </div>
