@@ -47,6 +47,7 @@ export class FundingSourceService {
             ],
           })
             .populate('storageSpaceId', 'name color icon')
+            .populate('budgetId', 'name color icon')
             .populate('sourceFundingId', 'name type color icon')
             .populate('destinationFundingId', 'name type color icon')
             .sort({ transactionDate: -1, createdAt: -1 })
@@ -67,6 +68,7 @@ export class FundingSourceService {
           ],
         })
           .populate('storageSpaceId', 'name color icon')
+          .populate('budgetId', 'name color icon')
           .sort({ transactionDate: -1, createdAt: -1 })
           .limit(5);
 

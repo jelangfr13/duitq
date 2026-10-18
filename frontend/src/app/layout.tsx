@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import QueryProvider from '@/lib/query-provider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
@@ -15,6 +15,14 @@ export const metadata: Metadata = {
   title: 'DuitQ — Manajemen Keuangan Pribadi Minimalis',
   description:
     'Aplikasi web mobile manajemen keuangan pribadi yang menyatukan sumber dana, ruang penyimpanan, dan piutang dalam satu antarmuka minimalis.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -39,6 +47,13 @@ export default function RootLayout({
                   document.documentElement.style.setProperty('--app-primary', c);
                 }
               } catch (e) {}
+
+              // Disable pinch-to-zoom and double-tap zoom gestures on mobile
+              if (typeof window !== 'undefined') {
+                document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+                document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+                document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+              }
             `,
           }}
         />

@@ -1,7 +1,7 @@
-# DuitQ — Aplikasi Keuangan Pribadi Minimalis (Update v1.2)
+# DuitQ — Aplikasi Keuangan Pribadi Minimalis (Update v1.2.1)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.2.0-blue?style=for-the-badge" alt="Version 1.2.0" />
+  <img src="https://img.shields.io/badge/Version-1.2.1-blue?style=for-the-badge" alt="Version 1.2.1" />
   <img src="https://img.shields.io/badge/Next.js-16%20(App%20Router)-black?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/Express.js-Backend%20API-000000?style=for-the-badge&logo=express" alt="Express.js" />
   <img src="https://img.shields.io/badge/MongoDB-Atlas%20ACID-47A248?style=for-the-badge&logo=mongodb" alt="MongoDB" />
@@ -18,11 +18,43 @@
 1. **Sumber Dana (*Funding Sources*)**: Tempat fisik/digital dana disimpan (Dompet Tunai, Rekening Bank BCA/Mandiri, E-Wallet GoPay/OVO, dll.).
 2. **Pos Budgeting (*Budgets*)**: Pagu anggaran belanja terikat langsung ke Sumber Dana tertentu tanpa memotong saldo awal dompet. Saldo dompet dan anggaran otomatis terpotong ketika transaksi pengeluaran dicatat dengan pos budget tersebut.
 
-DuitQ v1.2 hadir dengan tampilan modern yang mendukung **Mode Gelap (*Dark Mode*)**, **Kustomisasi Tema Warna Dinamis**, **Manajemen Foto Profil Canvas**, **Sensor Privasi Saldo**, **Menu Histori Transaksi Mendalam**, serta arsitektur **Total Keseluruhan Aset**.
+DuitQ v1.2.1 menghadirkan pengalaman aplikasi web mobile yang imersif dan optimal: **Halaman Khusus Mutasi Rekening (`/wallets/[id]`)**, **Pencegahan Zooming Gestures (Anti-Zoom PWA)**, **Pencarian Histori Bebas Lag (Debounced Search)**, **Mode Gelap (*Dark Mode*)**, **Kustomisasi Tema Warna Dinamis**, **Manajemen Foto Profil Canvas**, **Sensor Privasi Saldo**, serta arsitektur **Total Keseluruhan Aset**.
 
 ---
 
-## 🚀 Rangkuman Fitur Utama (Update v1.2)
+## 🚀 Rangkuman Fitur Utama (Update v1.2.1)
+
+### 💳 Halaman Khusus Mutasi Rekening (`/wallets/[id]`) *(Baru di v1.2.1)*
+- 📑 **Dedicated Mutation Page**: Tombol *"Lihat Mutasi"* pada setiap kartu rekening kini mengarahkan pengguna ke halaman khusus terdedikasi (`/wallets/[id]`).
+- 🏛️ **Hero Card & Saldo Terkini**: Menampilkan nama dompet, tipe rekening, ikon, warna aksen, dan saldo terkini lengkap dengan tombol sensor mata privasi (*hide balance*).
+- 📊 **Ringkasan Arus Kas Rekening**: Metrik visual **Total Uang Masuk** dan **Total Uang Keluar** khusus untuk rekening yang sedang dibuka.
+- 🔍 **Pencarian & Filter Khusus Rekening**:
+  - Kolom pencarian teks mutasi transaksi khusus rekening terpilih.
+  - Filter *chips* cepat: *Semua*, *Uang Masuk*, *Uang Keluar*, *Pindah Dana*.
+- 📅 **Daftar Mutasi Kronologis**: Transaksi dikelompokkan rapi berdasarkan tanggal (*Hari Ini*, *Kemarin*, dll.) dengan ikon semantik, badge transfer (*"Dari Dompet"* / *"Ke Dompet"*), badge pos anggaran, nominal tabular berformat `+Rp` / `-Rp`, serta modal rincian transaksi lengkap dengan opsi hapus transaksi.
+
+---
+
+### 📱 Pengalaman Mobile & Anti-Zoom PWA *(Baru di v1.2.1)*
+- 🔒 **Disabled Web Zooming (Anti-Zoom)**:
+  - Konfigurasi `viewport` Next.js (`maximumScale: 1`, `userScalable: false`, `viewportFit: 'cover'`).
+  - Aturan CSS `touch-action: pan-x pan-y` dan `touch-action: manipulation` pada elemen interaktif untuk mencegah *pinch-to-zoom* dan *double-tap-to-zoom*.
+  - Listener event pencegah gesture Safari iOS (`gesturestart`, `gesturechange`, `gestureend`) memastikan aplikasi berjalan stabil layaknya aplikasi native tanpa pergeseran rasio layar yang tidak diinginkan.
+
+---
+
+### 📜 Histori Transaksi Mendalam & Pencarian Bebas Lag (`/transactions`)
+- ⚡ **Pencarian Cepat 60 FPS (300ms Debounce)** *(Dioptimalkan di v1.2.1)*:
+  - Mengeliminasi jeda pengetikan huruf per huruf dengan memisahkan state input dan state kueri API melalui mekanisme *debounce* 300ms.
+  - Penggunaan TanStack Query `placeholderData` menjaga daftar transaksi tetap utuh di layar selama proses pengambilan data tanpa kedipan (*skeleton unmounting*).
+  - Indikator pemuatan halus (*spinner*) di dalam bilah pencarian saat data sedang disegarkan di latar belakang (`isFetching`).
+- 🏷️ **Filter Komprehensif**:
+  - Filter *chips* horizontal tipe transaksi (*Semua, Uang Masuk, Uang Keluar, Pindah Dana, Piutang*).
+  - Filter dropdown Sumber Dana, Pos Budgeting, dan Periode Waktu (*Bulan Ini*, *Bulan Lalu*, *Semua Waktu*, *Kustom Tanggal*).
+  - Sinkronisasi otomatis dengan query URL parameter (misal: `/transactions?fundingSourceId=...`).
+- 📊 **Ringkasan Dinamis**: Menghitung total Uang Masuk dan Uang Keluar dari hasil pencarian/filter aktif.
+
+---
 
 ### 🎨 Tampilan & Personalisasi Pengguna
 - 🌙 **Mode Gelap (Dark Mode)**: Beralih mulus antara mode terang dan gelap dengan kontras warna nyaman di mata pada seluruh komponen, form, modal *Bottom Sheet*, dan bar navigasi.
@@ -34,7 +66,7 @@ DuitQ v1.2 hadir dengan tampilan modern yang mendukung **Mode Gelap (*Dark Mode*
   - Pilihan koleksi avatar preset SVG mandiri (*offline-ready*) atau kembali ke avatar inisial nama.
   - Tampilan foto profil interaktif di pojok kanan atas Beranda yang terhubung langsung ke Pengaturan.
 - 👁️ **Sensor Privasi Saldo (*Hide Balance*)**:
-  - Tombol mata praktis tepat di sebelah nominal saldo utama di Beranda.
+  - Tombol mata praktis tepat di sebelah nominal saldo utama di Beranda dan seluruh kartu rekening.
   - Menyamarkan nominal saldo (`Rp ••••••••` / `Rp ••••••`) di seluruh kartu, grafik, dan riwayat transaksi.
 
 ---
@@ -62,16 +94,6 @@ DuitQ v1.2 hadir dengan tampilan modern yang mendukung **Mode Gelap (*Dark Mode*
 
 ---
 
-### 📜 Histori Transaksi Mendalam (`/transactions`)
-- 🔍 **Pencarian Real-Time**: Telusuri transaksi berdasarkan nama toko, judul, atau catatan transaksi.
-- 🏷️ **Filter Lengkap**:
-  - Filter *chips* horizontal tipe transaksi (*Semua, Uang Masuk, Uang Keluar, Pindah Dana, Piutang*).
-  - Filter dropdown Sumber Dana, Pos Budgeting, dan Periode Waktu.
-- 📊 **Ringkasan Dinamis**: Menghitung total Uang Masuk dan Uang Keluar dari hasil pencarian/filter aktif.
-- 📅 **Pengelompokan Tanggal**: Transaksi dikelompokkan secara rapi (*Hari Ini*, *Kemarin*, *Tanggal Spesifik*).
-
----
-
 ### 🤝 Modul Piutang (*Receivables Tracking*)
 - Catat dana yang dipinjamkan ke pihak lain beserta kontak dan tanggal jatuh tempo.
 - Mendukung pelunasan bertahap (*Partial Payment*) maupun pelunasan lunas (*Full Settlement*).
@@ -82,9 +104,10 @@ DuitQ v1.2 hadir dengan tampilan modern yang mendukung **Mode Gelap (*Dark Mode*
 
 ### ⚡ Performa & Pengalaman Pengguna (UX)
 - 💀 **Skeleton Loading**: Animasi kerangka visual (`DashboardSkeleton`, `TransactionsSkeleton`, `WalletsSkeleton`, `BudgetsSkeleton`, `ReceivablesSkeleton`) mencegah kedipan atau lonjakan angka saat API dipanggil.
-- 🚀 **Lazy Loading (Next.js Dynamic Imports)**:
+- 🚀 **Lazy Loading (Next.js Dynamic Imports & Partial Prerendering)**:
   - Komponen grafik berat Recharts (`TotalAssetsOverview`, `BarChart`) dan form modal (`QuickAddTransactionSheet`) dimuat secara *lazy* (`ssr: false`) dengan *placeholder skeleton*.
   - Atribut `loading="lazy"` pada gambar dan avatar profil.
+  - Navigasi bawah dibungkus `<Suspense>` untuk mendukung *Partial Prerendering* (PPR) pada rute statis maupun dinamis (`/wallets/[id]`).
 
 ---
 
@@ -139,6 +162,7 @@ DuitQ/
 │   ├── src/
 │   │   ├── app/                   # App Router: (auth), (main), manifest.ts
 │   │   │   └── (main)/            # dashboard, budgets, wallets, transactions, receivables, settings
+│   │   │       └── wallets/       # page.tsx (daftar dompet), [id]/page.tsx (halaman mutasi)
 │   │   ├── components/            # UI Components, Charts, ThemeProvider, Skeleton
 │   │   │   ├── charts/            # TotalAssetsOverview, BarChart, DonutChart
 │   │   │   ├── theme/             # ThemeProvider & Preset Warna

@@ -77,6 +77,7 @@ export default function TransactionsHistoryPage() {
 
   // Filter States
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
   const [selectedFundingSource, setSelectedFundingSource] = useState<string>('');
   const [selectedBudget, setSelectedBudget] = useState<string>('');
@@ -93,10 +94,25 @@ export default function TransactionsHistoryPage() {
   const { fundingSources } = useFundingSources();
   const { budgets } = useBudgets();
 
-  // Inisialisasi tanggal saat client mounted agar aman untuk prerendering Next.js
+  // Inisialisasi tanggal dan deteksi URL query parameter (fundingSourceId) saat client mounted
   useEffect(() => {
     setTodayDate(new Date());
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const fsId = params.get('fundingSourceId');
+      if (fsId) {
+        setSelectedFundingSource(fsId);
+      }
+    }
   }, []);
+
+  // Debounce search input (300ms) untuk mencegah lag dan unmounting input saat mengetik
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Hitung rentang tanggal saat period berubah di client
   useEffect(() => {
@@ -117,21 +133,21 @@ export default function TransactionsHistoryPage() {
     }
   }, [period, customStart, customEnd]);
 
-  // Query API parameters
+  // Query API parameters (menggunakan debouncedSearch agar request hanya dikirim setelah jeda mengetik)
   const queryParams = useMemo(() => {
     const p: Record<string, any> = {
       limit: 100,
     };
-    if (search.trim()) p.search = search.trim();
+    if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
     if (selectedType !== 'ALL') p.type = selectedType;
     if (selectedFundingSource) p.fundingSourceId = selectedFundingSource;
     if (selectedBudget) p.budgetId = selectedBudget;
     if (dateRange.startDate) p.startDate = dateRange.startDate;
     if (dateRange.endDate) p.endDate = dateRange.endDate;
     return p;
-  }, [search, selectedType, selectedFundingSource, selectedBudget, dateRange]);
+  }, [debouncedSearch, selectedType, selectedFundingSource, selectedBudget, dateRange]);
 
-  const { data, isLoading, isError, refetch } = useTransactionHistory(queryParams);
+  const { data, isLoading, isFetching, isError, refetch } = useTransactionHistory(queryParams);
 
   const transactions = data?.transactions || [];
   const summary = data?.summary || { totalIncome: 0, totalExpense: 0, count: 0 };
@@ -164,6 +180,7 @@ export default function TransactionsHistoryPage() {
   // Reset semua filter
   const handleResetFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setSelectedType('ALL');
     setSelectedFundingSource('');
     setSelectedBudget('');
@@ -264,17 +281,25 @@ export default function TransactionsHistoryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari transaksi, toko, atau catatan..."
-          className="w-full h-11 pl-10 pr-9 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all"
+          className="w-full h-11 pl-10 pr-12 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all"
         />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch('')}
-            className="absolute right-3 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div className="absolute right-3 flex items-center gap-1.5">
+          {isFetching && (
+            <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          )}
+          {search && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setDebouncedSearch('');
+              }}
+              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Horizontal Filter Chips (Tipe Transaksi) */}
@@ -347,6 +372,7 @@ export default function TransactionsHistoryPage() {
               setPeriod('THIS_MONTH');
               setSelectedType('ALL');
               setSearch('');
+              setDebouncedSearch('');
             }}
             className="shrink-0 text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer whitespace-nowrap"
           >
