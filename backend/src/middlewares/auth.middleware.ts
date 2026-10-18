@@ -72,3 +72,40 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     });
   }
 };
+
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Akses ditolak. Sesi autentikasi tidak ditemukan.',
+      });
+    }
+
+    const adminEmail = (env.DEV_ADMIN_EMAIL || '').toLowerCase().trim();
+    if (!adminEmail) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akses ditolak. Konfigurasi developer admin belum diatur di server.',
+      });
+    }
+
+    let userEmail = req.user.email;
+    if (!userEmail) {
+      const { User } = await import('../models');
+      const user = await User.findById(req.user.id).select('email');
+      userEmail = user?.email;
+    }
+
+    if (!userEmail || userEmail.toLowerCase().trim() !== adminEmail) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akses ditolak. Fitur ini hanya dapat diakses oleh Developer / Super Admin.',
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};

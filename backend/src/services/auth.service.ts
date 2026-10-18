@@ -10,6 +10,7 @@ import {
   LoginDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  RequestAdminResetDTO,
 } from '../../../shared/types/user';
 
 export class AuthService {
@@ -64,6 +65,29 @@ export class AuthService {
       throw new AppError('Email atau kata sandi tidak valid', 401);
     }
 
+    // Jika akun ditandai wajib reset kata sandi oleh Admin Panel:
+    if (user.mustResetPassword) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 jam
+
+      await PasswordResetToken.deleteMany({ userId: user._id });
+      await PasswordResetToken.create({
+        userId: user._id,
+        tokenHash,
+        expiresAt,
+        used: false,
+      });
+
+      return {
+        requirePasswordReset: true,
+        resetToken: rawToken,
+        email: user.email,
+        message:
+          'Kata sandi Anda telah direset oleh Administrator. Silakan masukkan kata sandi baru Anda.',
+      };
+    }
+
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) {
       throw new AppError('Email atau kata sandi tidak valid', 401);
@@ -83,6 +107,10 @@ export class AuthService {
       expiresIn: '1d',
     });
 
+    const isDevAdmin = Boolean(
+      env.DEV_ADMIN_EMAIL && user.email.toLowerCase().trim() === env.DEV_ADMIN_EMAIL.toLowerCase().trim()
+    );
+
     return {
       user: {
         id: user._id.toString(),
@@ -96,6 +124,7 @@ export class AuthService {
           darkMode: !!user.preferences?.darkMode,
           themeColor: user.preferences?.themeColor || '#2563EB',
         },
+        isDevAdmin,
       },
       accessToken,
       refreshToken,
@@ -111,6 +140,10 @@ export class AuthService {
       throw new AppError('Pengguna tidak ditemukan', 404);
     }
 
+    const isDevAdmin = Boolean(
+      env.DEV_ADMIN_EMAIL && user.email.toLowerCase().trim() === env.DEV_ADMIN_EMAIL.toLowerCase().trim()
+    );
+
     return {
       id: user._id.toString(),
       fullName: user.fullName,
@@ -123,6 +156,7 @@ export class AuthService {
         darkMode: !!user.preferences?.darkMode,
         themeColor: user.preferences?.themeColor || '#2563EB',
       },
+      isDevAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -161,13 +195,14 @@ export class AuthService {
       createdAt: new Date(),
     });
 
-    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    const baseUrl = env.APP_URL;
+    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
     // Kirim email URL reset kata sandi menggunakan Gmail SMTP / Nodemailer
     try {
       await sendEmail({
         to: user.email,
-        subject: '[DuitQ] Tautan Reset Kata Sandi Akun Anda',
+        subject: '[DuitQ] Tautan & Kode Verifikasi Reset Kata Sandi Akun Anda',
         category: 'Password Reset',
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -176,18 +211,22 @@ export class AuthService {
               <span style="font-size: 12px; color: #64748b; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Keuangan Pribadi</span>
             </div>
             <p style="color: #1e293b; font-size: 15px; margin-top: 0;">Halo <strong>${user.fullName}</strong>,</p>
-            <p style="color: #475569; font-size: 14px; line-height: 1.6;">Kami menerima permintaan untuk mengatur ulang kata sandi akun DuitQ Anda. Silakan klik tombol di bawah ini untuk membuat kata sandi baru:</p>
-            <div style="text-align: center; margin: 28px 0;">
+            <p style="color: #475569; font-size: 14px; line-height: 1.6;">Kami menerima permintaan untuk mengatur ulang kata sandi akun DuitQ Anda. Silakan klik tombol di bawah ini atau gunakan kode token verifikasi untuk membuat kata sandi baru:</p>
+            <div style="text-align: center; margin: 24px 0;">
               <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Reset Kata Sandi</a>
             </div>
+            <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px; margin: 20px 0; text-align: center;">
+              <span style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; display: block; margin-bottom: 6px;">Kode Verifikasi / Token Reset</span>
+              <code style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 700; color: #1e293b; word-break: break-all; letter-spacing: 0.5px;">${rawToken}</code>
+            </div>
             <p style="color: #64748b; font-size: 13px; line-height: 1.6;">Atau salin tautan berikut ke peramban Anda:<br/><a href="${resetUrl}" style="color: #2563eb; word-break: break-all;">${resetUrl}</a></p>
-            <div style="background-color: #f8fafc; border-left: 3px solid #f59e0b; padding: 10px 14px; margin-top: 20px; border-radius: 6px;">
-              <p style="color: #92400e; font-size: 12px; margin: 0; line-height: 1.5;">Tautan ini hanya berlaku selama <strong>15 menit</strong>. Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini.</p>
+            <div style="background-color: #fffbeb; border-left: 3px solid #f59e0b; padding: 10px 14px; margin-top: 20px; border-radius: 6px;">
+              <p style="color: #92400e; font-size: 12px; margin: 0; line-height: 1.5;">Tautan dan kode verifikasi ini hanya berlaku selama <strong>15 menit</strong>. Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini.</p>
             </div>
             <p style="color: #94a3b8; font-size: 11px; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">Email ini dikirim secara otomatis oleh sistem DuitQ.</p>
           </div>
         `,
-        text: `Halo ${user.fullName},\n\nKami menerima permintaan untuk mengatur ulang kata sandi akun DuitQ Anda.\nSilakan buka tautan berikut untuk membuat kata sandi baru:\n${resetUrl}\n\nTautan ini hanya berlaku selama 15 menit.\nJika Anda tidak meminta reset kata sandi, abaikan email ini.`,
+        text: `Halo ${user.fullName},\n\nKami menerima permintaan untuk mengatur ulang kata sandi akun DuitQ Anda.\nSilakan buka tautan berikut untuk membuat kata sandi baru:\n${resetUrl}\n\nKode Token Verifikasi:\n${rawToken}\n\nTautan dan kode ini hanya berlaku selama 15 menit.\nJika Anda tidak meminta reset kata sandi, abaikan email ini.`,
       });
       console.log(`[Email] ✅ Reset password email sent successfully to ${user.email}`);
     } catch (mailError: any) {
@@ -198,6 +237,73 @@ export class AuthService {
     console.log(`[Auth] 🔑 Password reset URL for ${user.email}:\n${resetUrl}`);
 
     // Selalu kembalikan respons generik tanpa membocorkan resetUrl di HTTP response (PWD-01)
+    return genericResponse;
+  }
+
+  /**
+   * Permintaan reset kata sandi melalui bantuan Developer / Admin
+   */
+  async requestAdminReset(dto: RequestAdminResetDTO) {
+    const email = dto.email.toLowerCase().trim();
+    const user = await User.findOne({ email });
+
+    const genericResponse = {
+      message:
+        'Permintaan reset kata sandi telah dikirimkan ke Developer / Admin. Mohon tunggu proses verifikasi atau coba login kembali setelah diproses.',
+    };
+
+    if (!user) {
+      return genericResponse;
+    }
+
+    // Tandai akun memiliki permintaan reset sandi aktif
+    user.hasPendingResetRequest = true;
+    user.resetRequestedAt = new Date();
+    user.resetRequestNote = dto.note ? dto.note.trim() : null;
+    await user.save();
+
+    // Kirim notifikasi email ke Developer / Admin jika DEV_ADMIN_EMAIL diatur
+    if (env.DEV_ADMIN_EMAIL) {
+      const adminUrl = `${env.APP_URL}/settings/admin`;
+      try {
+        await sendEmail({
+          to: env.DEV_ADMIN_EMAIL,
+          subject: `[DuitQ Admin] Permintaan Reset Kata Sandi: ${user.fullName} (${user.email})`,
+          category: 'Admin Notification',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+              <div style="margin-bottom: 20px;">
+                <span style="font-size: 22px; font-weight: 800; color: #2563eb; letter-spacing: -0.5px;">DuitQ</span>
+                <span style="font-size: 12px; color: #dc2626; font-weight: bold; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Admin Alert</span>
+              </div>
+              <p style="color: #1e293b; font-size: 15px; margin-top: 0;">Halo <strong>Developer / Admin DuitQ</strong>,</p>
+              <p style="color: #475569; font-size: 14px; line-height: 1.6;">Seorang pengguna meminta bantuan untuk mereset kata sandi akun mereka:</p>
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 14px 16px; border-radius: 8px; margin: 16px 0;">
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #334155;"><strong>Nama:</strong> ${user.fullName}</p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #334155;"><strong>Email:</strong> ${user.email}</p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #334155;"><strong>Waktu Permintaan:</strong> ${new Date().toLocaleString('id-ID')}</p>
+                ${
+                  user.resetRequestNote
+                    ? `<p style="margin: 0; font-size: 13px; color: #334155;"><strong>Catatan Pengguna:</strong> ${user.resetRequestNote}</p>`
+                    : ''
+                }
+              </div>
+
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${adminUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Buka Admin Panel</a>
+              </div>
+              <p style="color: #94a3b8; font-size: 11px; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">Anda dapat mereset kata sandi pengguna atau mengosongkan kata sandi agar pengguna membuat kata sandi baru saat login.</p>
+            </div>
+          `,
+          text: `Permintaan Reset Kata Sandi Pengguna:\nNama: ${user.fullName}\nEmail: ${user.email}\nWaktu: ${new Date().toLocaleString('id-ID')}\nCatatan: ${user.resetRequestNote || '-'}\n\nBuka Admin Panel: ${adminUrl}`,
+        });
+        console.log(`[Admin Alert] ✅ Notification email sent to admin: ${env.DEV_ADMIN_EMAIL}`);
+      } catch (err: any) {
+        console.warn('[Admin Alert] ⚠️ Failed sending notification to admin:', err.message || err);
+      }
+    }
+
     return genericResponse;
   }
 
@@ -226,6 +332,10 @@ export class AuthService {
     // Hash kata sandi baru dengan bcrypt
     const passwordHash = await bcrypt.hash(dto.password, 10);
     user.passwordHash = passwordHash;
+    user.mustResetPassword = false;
+    user.hasPendingResetRequest = false;
+    user.resetRequestedAt = null;
+    user.resetRequestNote = null;
     await user.save();
 
     // Hapus dokumen token reset agar bersifat one-time use (PWD-03)

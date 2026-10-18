@@ -249,7 +249,7 @@ export default function TransactionsHistoryPage() {
   }
 
   return (
-    <div className="space-y-4 px-4 pt-4">
+    <div className="space-y-4 px-4 pt-4 overflow-x-hidden max-w-full">
       {/* Top Header */}
       <div className="flex items-center justify-between pt-1">
         <div>

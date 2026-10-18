@@ -154,7 +154,7 @@ export default function WalletsPage() {
   }
 
   return (
-    <div className="space-y-4 px-4 pt-4">
+    <div className="space-y-4 px-4 pt-4 overflow-x-hidden max-w-full">
       {/* Segmented Control: Sumber Dana vs Ruang Penyimpanan (Bab 7.1) */}
       <div className="flex p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-xs font-semibold">
         <button

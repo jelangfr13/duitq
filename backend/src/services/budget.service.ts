@@ -106,6 +106,13 @@ export class BudgetService {
       throw new AppError('Sumber Dana yang dipilih tidak ditemukan', 404);
     }
 
+    if (dto.amount > fundingSource.currentBalance) {
+      throw new AppError(
+        `Saldo Sumber Dana (${fundingSource.name}) tidak mencukupi untuk alokasi anggaran ini. Saldo tersedia: Rp ${new Intl.NumberFormat('id-ID').format(fundingSource.currentBalance)}`,
+        400
+      );
+    }
+
     const budget = await Budget.create({
       userId: userObjId,
       fundingSourceId: fundingSource._id,
@@ -149,20 +156,31 @@ export class BudgetService {
       throw new AppError('Anggaran tidak ditemukan', 404);
     }
 
-    if (dto.fundingSourceId && dto.fundingSourceId !== budget.fundingSourceId.toString()) {
-      if (!Types.ObjectId.isValid(dto.fundingSourceId)) {
-        throw new AppError('Sumber Dana tidak valid', 400);
-      }
-      const fs = await FundingSource.findOne({
-        _id: new Types.ObjectId(dto.fundingSourceId),
-        userId: userObjId,
-        isArchived: false,
-      });
-      if (!fs) {
-        throw new AppError('Sumber Dana baru tidak ditemukan', 404);
-      }
-      budget.fundingSourceId = fs._id;
+    const targetAmount = dto.amount !== undefined ? dto.amount : budget.amount;
+    const targetFsId = dto.fundingSourceId || budget.fundingSourceId;
+
+    if (!Types.ObjectId.isValid(targetFsId)) {
+      throw new AppError('Sumber Dana tidak valid', 400);
     }
+
+    const fs = await FundingSource.findOne({
+      _id: new Types.ObjectId(targetFsId),
+      userId: userObjId,
+      isArchived: false,
+    });
+
+    if (!fs) {
+      throw new AppError('Sumber Dana tidak ditemukan', 404);
+    }
+
+    if (targetAmount > fs.currentBalance) {
+      throw new AppError(
+        `Saldo Sumber Dana (${fs.name}) tidak mencukupi untuk alokasi anggaran ini. Saldo tersedia: Rp ${new Intl.NumberFormat('id-ID').format(fs.currentBalance)}`,
+        400
+      );
+    }
+
+    budget.fundingSourceId = fs._id;
 
     if (dto.name !== undefined) budget.name = dto.name.trim();
     if (dto.amount !== undefined) budget.amount = dto.amount;

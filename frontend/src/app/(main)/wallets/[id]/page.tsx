@@ -251,7 +251,7 @@ function WalletDetailContent() {
   ];
 
   return (
-    <div className="space-y-4 px-4 pt-3 pb-8">
+    <div className="space-y-4 px-4 pt-3 pb-8 overflow-x-hidden max-w-full">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">

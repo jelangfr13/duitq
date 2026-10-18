@@ -141,6 +141,13 @@ export default function BudgetsPage() {
       return;
     }
 
+    if (selectedFundingSource && cleanAmount > selectedFundingSource.currentBalance) {
+      setError(
+        `Saldo ${selectedFundingSource.name} (${formatRupiah(selectedFundingSource.currentBalance)}) tidak mencukupi untuk nominal anggaran ${formatRupiah(cleanAmount)}`
+      );
+      return;
+    }
+
     try {
       if (editingBudget) {
         await updateBudget({
@@ -202,13 +209,17 @@ export default function BudgetsPage() {
 
   // Cari nama sumber dana untuk hint edukatif di modal
   const selectedFundingSource = fundingSources.find((fs) => fs._id === fundingSourceId);
+  const cleanAmount = parseInt(amountStr.replace(/[^0-9]/g, ''), 10) || 0;
+  const isInsufficientBalance = Boolean(
+    selectedFundingSource && cleanAmount > 0 && cleanAmount > selectedFundingSource.currentBalance
+  );
 
   if (isLoading && (!budgets || budgets.length === 0)) {
     return <BudgetsSkeleton />;
   }
 
   return (
-    <div className="space-y-4 px-4 pt-4">
+    <div className="space-y-4 px-4 pt-4 overflow-x-hidden max-w-full">
       {/* Segmented Control: Sumber Dana vs Budgeting */}
       <div className="flex p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-xs font-semibold">
         <Link
@@ -501,17 +512,51 @@ export default function BudgetsPage() {
           />
 
           {/* Batas Plafon Anggaran (Rp) */}
-          <Input
-            label="Plafon / Batas Anggaran (Rp)"
-            placeholder="Contoh: 500.000"
-            value={
-              amountStr
-                ? parseInt(amountStr.replace(/[^0-9]/g, ''), 10).toLocaleString('id-ID')
-                : ''
-            }
-            onChange={(e) => setAmountStr(e.target.value.replace(/[^0-9]/g, ''))}
-            required
-          />
+          <div className="space-y-1">
+            <Input
+              label="Plafon / Batas Anggaran (Rp)"
+              placeholder="Contoh: 500.000"
+              value={
+                amountStr
+                  ? parseInt(amountStr.replace(/[^0-9]/g, ''), 10).toLocaleString('id-ID')
+                  : ''
+              }
+              onChange={(e) => {
+                setAmountStr(e.target.value.replace(/[^0-9]/g, ''));
+                if (error) setError(null);
+              }}
+              required
+            />
+            {selectedFundingSource && (
+              <div className="flex items-center justify-between text-[11px] px-1 pt-0.5">
+                <span className="text-slate-500 dark:text-slate-400">
+                  Saldo Tersedia ({selectedFundingSource.name}):
+                </span>
+                <span
+                  className={`font-semibold ${
+                    isInsufficientBalance
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {formatRupiah(selectedFundingSource.currentBalance)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Peringatan jika saldo sumber dana tidak mencukupi */}
+          {isInsufficientBalance && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold text-[11px]">Saldo Tidak Mencukupi</p>
+                <p className="text-[11px] leading-relaxed">
+                  Plafon anggaran melebihi saldo yang tersedia di dompet <strong>{selectedFundingSource?.name}</strong>. Anda tidak dapat membuat anggaran melebihi saldo dompet.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Banner Edukatif Sesuai Logika Baru */}
           <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40 flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-300">
@@ -570,10 +615,17 @@ export default function BudgetsPage() {
           <Button
             type="submit"
             isLoading={isCreating || isUpdating}
-            style={{ backgroundColor: themeColor }}
-            className="w-full text-xs font-bold py-3 mt-2 cursor-pointer"
+            disabled={isInsufficientBalance}
+            style={{ backgroundColor: isInsufficientBalance ? undefined : themeColor }}
+            className={`w-full text-xs font-bold py-3 mt-2 cursor-pointer ${
+              isInsufficientBalance ? 'opacity-50 cursor-not-allowed bg-slate-400 dark:bg-slate-700' : ''
+            }`}
           >
-            {editingBudget ? 'Simpan Perubahan' : 'Buat Pos Anggaran'}
+            {isInsufficientBalance
+              ? 'Saldo Dompet Kurang'
+              : editingBudget
+              ? 'Simpan Perubahan'
+              : 'Buat Pos Anggaran'}
           </Button>
         </form>
       </BottomSheet>

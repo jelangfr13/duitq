@@ -5,3 +5,5 @@ export * from './useStorageSpaces';
 export * from './useTransactions';
 export * from './useReceivables';
 export * from './useBudgets';
+export * from './useAdmin';
+

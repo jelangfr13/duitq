@@ -15,6 +15,10 @@ export interface IUser {
   passwordHash: string;
   avatarUrl?: string | null;
   preferences: IUserPreferences;
+  mustResetPassword?: boolean;
+  hasPendingResetRequest?: boolean;
+  resetRequestedAt?: Date | null;
+  resetRequestNote?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +86,22 @@ const userSchema = new Schema<IUser>(
         themeColor: '#2563EB',
       }),
       required: true,
+    },
+    mustResetPassword: {
+      type: Boolean,
+      default: false,
+    },
+    hasPendingResetRequest: {
+      type: Boolean,
+      default: false,
+    },
+    resetRequestedAt: {
+      type: Date,
+      default: null,
+    },
+    resetRequestNote: {
+      type: String,
+      default: null,
     },
   },
   {
