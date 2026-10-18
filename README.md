@@ -1,7 +1,7 @@
-# DuitQ — Aplikasi Keuangan Pribadi Minimalis (Update v1.2.1)
+# DuitQ — Aplikasi Keuangan Pribadi Minimalis (Update v1.2.2)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.2.1-blue?style=for-the-badge" alt="Version 1.2.1" />
+  <img src="https://img.shields.io/badge/Version-1.2.2-blue?style=for-the-badge" alt="Version 1.2.2" />
   <img src="https://img.shields.io/badge/Next.js-16%20(App%20Router)-black?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/Express.js-Backend%20API-000000?style=for-the-badge&logo=express" alt="Express.js" />
   <img src="https://img.shields.io/badge/MongoDB-Atlas%20ACID-47A248?style=for-the-badge&logo=mongodb" alt="MongoDB" />
@@ -18,24 +18,78 @@
 1. **Sumber Dana (*Funding Sources*)**: Tempat fisik/digital dana disimpan (Dompet Tunai, Rekening Bank BCA/Mandiri, E-Wallet GoPay/OVO, dll.).
 2. **Pos Budgeting (*Budgets*)**: Pagu anggaran belanja terikat langsung ke Sumber Dana tertentu tanpa memotong saldo awal dompet. Saldo dompet dan anggaran otomatis terpotong ketika transaksi pengeluaran dicatat dengan pos budget tersebut.
 
-DuitQ v1.2.1 menghadirkan pengalaman aplikasi web mobile yang imersif dan optimal: **Halaman Khusus Mutasi Rekening (`/wallets/[id]`)**, **Pencegahan Zooming Gestures (Anti-Zoom PWA)**, **Pencarian Histori Bebas Lag (Debounced Search)**, **Mode Gelap (*Dark Mode*)**, **Kustomisasi Tema Warna Dinamis**, **Manajemen Foto Profil Canvas**, **Sensor Privasi Saldo**, serta arsitektur **Total Keseluruhan Aset**.
+DuitQ v1.2.2 menghadirkan penyempurnaan menyeluruh: **Admin Panel Khusus Developer (`/settings/admin`)**, **Fitur Lupa Kata Sandi 2 Metode (Bantuan Admin & Email Mandiri)**, **Penjaminan Tautan Email Bebas Localhost (*Zero-Localhost Guarantee*)**, **Validasi Integritas Saldo Budgeting**, **Kestabilan Tata Letak Form Statis (*Zero Horizontal Shift*)**, **Brand Asset & Ikon Aplikasi HTML/PWA**, serta fitur v1.2.1 seperti **Halaman Khusus Mutasi Rekening (`/wallets/[id]`)**, **Anti-Zoom PWA**, dan **Pencarian Histori Bebas Lag**.
 
 ---
 
-## 🚀 Rangkuman Fitur Utama (Update v1.2.1)
+## 🚀 Rangkuman Fitur Utama (Update v1.2.2)
 
-### 💳 Halaman Khusus Mutasi Rekening (`/wallets/[id]`) *(Baru di v1.2.1)*
-- 📑 **Dedicated Mutation Page**: Tombol *"Lihat Mutasi"* pada setiap kartu rekening kini mengarahkan pengguna ke halaman khusus terdedikasi (`/wallets/[id]`).
-- 🏛️ **Hero Card & Saldo Terkini**: Menampilkan nama dompet, tipe rekening, ikon, warna aksen, dan saldo terkini lengkap dengan tombol sensor mata privasi (*hide balance*).
+### 🛡️ Admin Panel Developer (`/settings/admin`) *(Baru di v1.2.2)*
+- 🔐 **Akses Terproteksi Khusus Developer Admin**:
+  - Submenu Admin Panel di Pengaturan hanya muncul jika akun yang login cocok dengan konfigurasi environment `DEV_ADMIN_EMAIL` dan `NEXT_PUBLIC_DEV_ADMIN_EMAIL`.
+  - Alamat email admin tidak di-hardcode di kode program sehingga sepenuhnya aman dari kebocoran publik.
+  - Dilindungi middleware otorisasi backend `requireAdmin`.
+- 📊 **Dasbor Kontrol Akun Pengguna**:
+  - **Statistik KPI Kompak**: Total Pengguna, Pengguna Butuh Reset Sandi, Total Dompet, dan Total Transaksi.
+  - **Tab Filter Cepat**: Berpindah dalam 1 klik antara tab *Semua Pengguna* dan tab *Butuh Reset* (dengan indikator status aktif).
+  - **Pencarian Cepat**: Filter pencarian instan berdasarkan nama lengkap atau alamat email pengguna.
+- 🔑 **Reset Kata Sandi Pengguna Fleksibel**:
+  - **Mode Sandi Kustom**: Admin dapat memasukkan kata sandi spesifik yang langsung aktif, dilengkapi tombol *Salin Kata Sandi*.
+  - **Mode Force Reset Saat Login**: Jika kotak kata sandi dikosongkan oleh admin, sistem menandai akun `mustResetPassword = true`. Ketika pengguna mencoba login kembali di halaman masuk, mereka akan **langsung dialihkan untuk membuat kata sandi baru**.
+- 🚨 **Hapus Akun Permanen (*Danger Action*)**:
+  - Tombol aksi berwarna **Merah Terang / Danger** dengan dialog konfirmasi ketik teks (`HAPUS PENGGUNA`) untuk menghapus akun dan kaskade seluruh data keuangannya secara permanen dari MongoDB.
+  - Proteksi mandiri: Akun Developer Utama tidak dapat dihapus melalui antarmuka admin panel.
+
+---
+
+### 🔑 Fitur Lupa Kata Sandi 2 Metode & Tautan Bersih *(Baru di v1.2.2)*
+- 🔄 **Dua Pilihan Metode Pemulihan Akun**:
+  1. **Opsi 1: Minta Bantuan Developer / Admin** *(Disarankan)*:
+     - Solusi ketika pengguna kehilangan akses kotak masuk email atau email tidak menerima kode OTP/verifikasi.
+     - Pengguna memasukkan email dan catatan kendala (opsional). Permintaan dicatat di basis data dan mengirimkan notifikasi ke Developer Admin.
+     - Akun pengguna langsung ditandai dengan badge peringatan amber `🔔 Meminta Reset Kata Sandi` di Admin Panel untuk segera diproses admin.
+  2. **Opsi 2: Kirim Kode & Tautan ke Email Terdaftar** *(Mandiri)*:
+     - Sistem mengirimkan email berisi **tombol reset langsung**, **tautan URL resmi**, dan **kode token verifikasi 64-karakter**.
+- 🌐 **Jaminan Tautan Email Bebas Localhost (*Zero-Localhost Guarantee*)**:
+  - Fungsi resolver cerdas `getCleanFrontendUrl()` menyaring multi-origin CORS, secara ketat mengeliminasi alamat `localhost` atau `127.0.0.1`, dan selalu menggunakan domain resmi production (`https://duitq.vercel.app`).
+- ✍️ **Fleksibilitas Input Kode Verifikasi (`/reset-password`)**:
+  - Halaman `/reset-password` mendukung pembukaan otomatis lewat query parameter tautan URL (`?token=...`) maupun penginputan kode verifikasi secara manual jika pengguna datang langsung ke halaman reset sandi.
+
+---
+
+### 🛑 Validasi Batasan Saldo Budgeting *(Baru di v1.2.2)*
+- ⚖️ **Integritas Alokasi Dana**:
+  - Pagu anggaran (*budgeting limit*) tidak dapat dibuat jika nominalnya melebihi sisa saldo yang tersedia pada Sumber Dana yang dipilih.
+  - Validasi ganda di tingkat frontend (peringatan instan) dan backend Express (pemeriksaan saldo real-time) untuk mencegah alokasi anggaran minus atau fiktif.
+
+---
+
+### 🎨 Brand Ikon Aplikasi & PWA Favicon *(Baru di v1.2.2)*
+- 💎 **Brand Assets Resmi**:
+  - Penyematan ikon resmi DuitQ (*squircle* biru royal `#2563EB` dengan siluet dompet putih elegan) pada favicon peramban web (`public/icon.svg`), rute metadata dinamis Next.js (`app/icon.tsx`, `app/apple-icon.tsx`), dan manifes web (`manifest.webmanifest`).
+  - Menjamin konsistensi visual identitas merek di halaman login, tab browser desktop/mobile, dan saat ditambahkan ke layar utama (*Add to Home Screen*) pada iOS dan Android.
+
+---
+
+### 📐 Kestabilan Layout Form Transaksi (*Zero Horizontal Shift*) *(Baru di v1.2.2)*
+- 🔒 **Fixed Viewport & Form Statis**:
+  - Memperbaiki tata letak drawer *Catat Transaksi Cepat* (`BottomSheet.tsx`) yang sebelumnya dapat bergeser ke kiri/kanan.
+  - Penerapan aturan `overflow-x: hidden`, `overscroll-behavior: contain`, serta penataan kontainer form statis memastikan antarmuka tetap kokoh dan stabil di semua perangkat mobile.
+
+---
+
+### 💳 Halaman Khusus Mutasi Rekening (`/wallets/[id]`) *(Fitur v1.2.1)*
+- 📑 **Dedicated Mutation Page**: Tombol *"Lihat Mutasi"* pada setiap kartu rekening mengarahkan pengguna ke halaman terdedikasi (`/wallets/[id]`).
+- 🏛️ **Hero Card & Saldo Terkini**: Menampilkan nama dompet, tipe rekening, ikon, warna aksen, dan saldo terkini lengkap dengan sensor privasi (*hide balance*).
 - 📊 **Ringkasan Arus Kas Rekening**: Metrik visual **Total Uang Masuk** dan **Total Uang Keluar** khusus untuk rekening yang sedang dibuka.
 - 🔍 **Pencarian & Filter Khusus Rekening**:
-  - Kolom pencarian teks mutasi transaksi khusus rekening terpilih.
+  - Kolom pencarian teks mutasi transaksi rekening terpilih.
   - Filter *chips* cepat: *Semua*, *Uang Masuk*, *Uang Keluar*, *Pindah Dana*.
 - 📅 **Daftar Mutasi Kronologis**: Transaksi dikelompokkan rapi berdasarkan tanggal (*Hari Ini*, *Kemarin*, dll.) dengan ikon semantik, badge transfer (*"Dari Dompet"* / *"Ke Dompet"*), badge pos anggaran, nominal tabular berformat `+Rp` / `-Rp`, serta modal rincian transaksi lengkap dengan opsi hapus transaksi.
 
 ---
 
-### 📱 Pengalaman Mobile & Anti-Zoom PWA *(Baru di v1.2.1)*
+### 📱 Pengalaman Mobile & Anti-Zoom PWA *(Fitur v1.2.1)*
 - 🔒 **Disabled Web Zooming (Anti-Zoom)**:
   - Konfigurasi `viewport` Next.js (`maximumScale: 1`, `userScalable: false`, `viewportFit: 'cover'`).
   - Aturan CSS `touch-action: pan-x pan-y` dan `touch-action: manipulation` pada elemen interaktif untuk mencegah *pinch-to-zoom* dan *double-tap-to-zoom*.
@@ -44,7 +98,7 @@ DuitQ v1.2.1 menghadirkan pengalaman aplikasi web mobile yang imersif dan optima
 ---
 
 ### 📜 Histori Transaksi Mendalam & Pencarian Bebas Lag (`/transactions`)
-- ⚡ **Pencarian Cepat 60 FPS (300ms Debounce)** *(Dioptimalkan di v1.2.1)*:
+- ⚡ **Pencarian Cepat 60 FPS (300ms Debounce)**:
   - Mengeliminasi jeda pengetikan huruf per huruf dengan memisahkan state input dan state kueri API melalui mekanisme *debounce* 300ms.
   - Penggunaan TanStack Query `placeholderData` menjaga daftar transaksi tetap utuh di layar selama proses pengambilan data tanpa kedipan (*skeleton unmounting*).
   - Indikator pemuatan halus (*spinner*) di dalam bilah pencarian saat data sedang disegarkan di latar belakang (`isFetching`).
@@ -148,27 +202,30 @@ DuitQ v1.2.1 menghadirkan pengalaman aplikasi web mobile yang imersif dan optima
 DuitQ/
 ├── backend/                       # REST API Express.js + MongoDB
 │   ├── src/
-│   │   ├── config/                # Database, Mailer, & Environment Config (JWT_EXPIRES_IN: 1d)
-│   │   ├── controllers/           # Auth, Budget, FundingSource, Transaction, User
-│   │   ├── middlewares/           # Auth JWT, Rate Limiter, Zod Validation, Error Handler
-│   │   ├── models/                # User, Budget, FundingSource, Transaction, Receivable
-│   │   ├── routes/                # Router Express (/api/v1/...)
-│   │   ├── services/              # Logika Bisnis & Transaksi ACID
+│   │   ├── config/                # Database, Mailer, & Clean APP_URL Env Config
+│   │   ├── controllers/           # Admin, Auth, Budget, FundingSource, Transaction, User
+│   │   ├── middlewares/           # Auth JWT, Admin Guard, Rate Limiter, Zod Validation, Error Handler
+│   │   ├── models/                # User, Budget, FundingSource, Transaction, Receivable, PasswordResetToken
+│   │   ├── routes/                # Router Express (/api/v1/auth, /admin, /budgets, dll.)
+│   │   ├── services/              # Logika Bisnis, Admin Service, & Transaksi ACID
 │   │   ├── app.ts                 # Konfigurasi Express, Body Parser (5MB), & CORS
 │   │   └── server.ts              # Inisialisasi Server
 │   ├── .env.example               # Template environment backend
 │   └── tsconfig.json
 ├── frontend/                      # Next.js App Router Mobile Web
+│   ├── public/                    # Icon SVG, Favicon, & Manifest Assets
 │   ├── src/
-│   │   ├── app/                   # App Router: (auth), (main), manifest.ts
+│   │   ├── app/                   # App Router: (auth), (main), manifest.ts, icon.tsx, apple-icon.tsx
+│   │   │   ├── (auth)/            # login, register, forgot-password, reset-password
 │   │   │   └── (main)/            # dashboard, budgets, wallets, transactions, receivables, settings
+│   │   │       ├── settings/      # page.tsx (pengaturan), admin/page.tsx (admin panel)
 │   │   │       └── wallets/       # page.tsx (daftar dompet), [id]/page.tsx (halaman mutasi)
 │   │   ├── components/            # UI Components, Charts, ThemeProvider, Skeleton
 │   │   │   ├── charts/            # TotalAssetsOverview, BarChart, DonutChart
 │   │   │   ├── theme/             # ThemeProvider & Preset Warna
 │   │   │   ├── transactions/      # QuickAddTransactionSheet Drawer
 │   │   │   └── ui/                # Button, Card, BottomSheet, Input, Select, Skeleton
-│   │   ├── hooks/                 # Custom React Query Hooks (useAuth, useBudgets, dll.)
+│   │   ├── hooks/                 # React Query Hooks (useAuth, useAdmin, useBudgets, dll.)
 │   │   ├── lib/                   # Axios API Client, Interceptor 401, Currency Formatters
 │   │   └── middleware.ts          # Route Guard Next.js Middleware
 │   ├── .env.example               # Template environment frontend
@@ -213,7 +270,10 @@ cd duitq
    JWT_EXPIRES_IN=1d
    FRONTEND_URL=http://localhost:3000
 
-   # Konfigurasi SMTP (Opsional untuk Reset Password)
+   # Developer / Super Admin Email (Untuk Mengakses Admin Panel)
+   DEV_ADMIN_EMAIL=dev@dev.com
+
+   # Konfigurasi SMTP (Opsional untuk Reset Password Email)
    EMAIL_PROVIDER=gmail
    SMTP_SERVICE=gmail
    SMTP_HOST=smtp.gmail.com
@@ -239,9 +299,10 @@ cd duitq
    ```bash
    cp .env.example .env.local
    ```
-3. Pastikan endpoint backend mengarah ke port backend:
+3. Sesuaikan konfigurasi di `frontend/.env.local`:
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:5001/api/v1
+   NEXT_PUBLIC_DEV_ADMIN_EMAIL=dev@dev.com
    ```
 4. Jalankan server pengembangan Next.js:
    ```bash
@@ -264,11 +325,13 @@ cd duitq
 - `MONGODB_URI`: *Connection string MongoDB Atlas*
 - `JWT_SECRET`: *String rahasia unik minimal 32 karakter*
 - `JWT_EXPIRES_IN`: `1d`
-- `FRONTEND_URL`: `https://duitq.vercel.app` (domain frontend Anda)
+- `FRONTEND_URL`: `https://duitq.vercel.app` (domain frontend production)
 - `COOKIE_SAME_SITE`: `none` *(Wajib jika backend dan frontend berada pada domain/platform berbeda)*
+- `DEV_ADMIN_EMAIL`: *Alamat email developer/super admin Anda*
 
 ### Konfigurasi Environment Frontend Production:
 - `NEXT_PUBLIC_API_URL`: URL API backend production (contoh: `https://api.duitq.com/api/v1`)
+- `NEXT_PUBLIC_DEV_ADMIN_EMAIL`: *Alamat email developer/super admin Anda*
 
 ---
 

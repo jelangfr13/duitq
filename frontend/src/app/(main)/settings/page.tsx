@@ -22,6 +22,8 @@ import {
   Eye,
   LogOut,
   Sparkles,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, THEME_COLOR_PRESETS } from '@/components/theme/ThemeProvider';
@@ -51,6 +53,14 @@ export default function SettingsPage() {
     isDeletingAccount,
   } = useAuth();
   const { darkMode, toggleDarkMode, themeColor, setThemeColor } = useTheme();
+
+  const isDevAdmin = Boolean(
+    user?.isDevAdmin ||
+      (user?.email &&
+        process.env.NEXT_PUBLIC_DEV_ADMIN_EMAIL &&
+        user.email.toLowerCase().trim() ===
+          process.env.NEXT_PUBLIC_DEV_ADMIN_EMAIL.toLowerCase().trim())
+  );
 
   const [notification, setNotification] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -415,6 +425,51 @@ export default function SettingsPage() {
         </Card>
       </div>
 
+      {/* Sub Menu Khusus: Admin Panel (Hanya terlihat jika login sebagai developer) */}
+      {isDevAdmin && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Developer Zone</span>
+            </h3>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+              Super Admin
+            </span>
+          </div>
+
+          <Card className="p-4 bg-white dark:bg-slate-900 border border-blue-200/70 dark:border-blue-900/50 rounded-2xl shadow-xs">
+            <Link
+              href="/settings/admin"
+              className="flex items-center justify-between p-1.5 -m-1.5 rounded-xl hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                  <ShieldAlert className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      Admin Panel
+                    </p>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800">
+                      Kelola Akun
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                    Daftar pengguna, kontrol reset kata sandi, dan hapus akun terdaftar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pl-2">
+                <ChevronRight className="w-5 h-5 stroke-[2]" />
+              </div>
+            </Link>
+          </Card>
+        </div>
+      )}
+
       {/* 4. Informasi Aplikasi */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider px-1">
@@ -428,7 +483,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
             <span className="text-slate-500 dark:text-slate-400">Versi Aplikasi</span>
-            <span className="text-slate-600 dark:text-slate-400 font-mono font-medium">v1.2.1</span>
+            <span className="text-slate-600 dark:text-slate-400 font-mono font-medium">v1.2.2</span>
           </div>
         </Card>
       </div>

@@ -15,6 +15,11 @@ export interface IUser {
   passwordHash?: string;
   avatarUrl?: string | null;
   preferences: IUserPreferences;
+  isDevAdmin?: boolean;
+  mustResetPassword?: boolean;
+  hasPendingResetRequest?: boolean;
+  resetRequestedAt?: Date | string | null;
+  resetRequestNote?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -75,9 +80,16 @@ export const updatePreferencesSchema = z.object({
 
 export const updateUserProfileSchema = updatePreferencesSchema;
 
+export const requestAdminResetSchema = z.object({
+  email: z.string().trim().email('Format email tidak valid'),
+  note: z.string().trim().max(300, 'Catatan maksimal 300 karakter').optional(),
+});
+
 export type RegisterDTO = z.infer<typeof registerSchema>;
 export type LoginDTO = z.infer<typeof loginSchema>;
 export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
+export type RequestAdminResetDTO = z.infer<typeof requestAdminResetSchema>;
 export type UpdatePreferencesDTO = z.infer<typeof updatePreferencesSchema>;
 export type UpdateUserProfileDTO = z.infer<typeof updateUserProfileSchema>;
+

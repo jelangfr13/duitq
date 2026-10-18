@@ -35,10 +35,18 @@ export default function LoginPage() {
     }
 
     try {
-      await loginMutation.mutateAsync({
+      const res = await loginMutation.mutateAsync({
         email: email.trim().toLowerCase(),
         password,
       });
+
+      if (res?.requirePasswordReset || res?.data?.requirePasswordReset) {
+        const resetToken = res?.data?.resetToken || res?.resetToken;
+        if (resetToken && typeof window !== 'undefined') {
+          window.location.href = `/reset-password?token=${resetToken}&adminReset=true`;
+          return;
+        }
+      }
     } catch (err) {
       setGeneralError(getErrorMessage(err));
     }

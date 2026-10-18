@@ -46,7 +46,23 @@ export class AuthController {
    */
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { user, accessToken, refreshToken } = await authService.login(req.body);
+      const result = await authService.login(req.body);
+
+      // Jika akun ditandai harus reset kata sandi oleh Admin Panel
+      if (result.requirePasswordReset) {
+        return res.status(200).json({
+          success: true,
+          requirePasswordReset: true,
+          message: result.message,
+          data: {
+            requirePasswordReset: true,
+            resetToken: result.resetToken,
+            email: result.email,
+          },
+        });
+      }
+
+      const { user, accessToken, refreshToken } = result;
 
       // Terbitkan accessToken dan refreshToken di dalam HttpOnly, Secure, SameSite=Lax Cookie (AUTH-03)
       res.cookie('accessToken', accessToken, {
@@ -122,6 +138,21 @@ export class AuthController {
         success: true,
         message: result.message,
         data: result.resetUrl ? { resetUrl: result.resetUrl } : undefined,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/request-admin-reset
+   */
+  async requestAdminReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.requestAdminReset(req.body);
+      return res.status(200).json({
+        success: true,
+        message: result.message,
       });
     } catch (error) {
       next(error);

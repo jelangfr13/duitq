@@ -11,6 +11,7 @@ import {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  requestAdminResetSchema,
 } from '../../../shared/types/user';
 
 const router = Router();
@@ -61,6 +62,17 @@ router.post(
   forgotPasswordRateLimiter,
   validate(forgotPasswordSchema),
   (req, res, next) => authController.forgotPassword(req, res, next)
+);
+
+/**
+ * 5b. POST /api/v1/auth/request-admin-reset
+ * Permintaan reset kata sandi ke Developer / Admin
+ */
+router.post(
+  '/request-admin-reset',
+  forgotPasswordRateLimiter,
+  validate(requestAdminResetSchema),
+  (req, res, next) => authController.requestAdminReset(req, res, next)
 );
 
 /**

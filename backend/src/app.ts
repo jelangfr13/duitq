@@ -12,6 +12,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import userRoutes from './routes/user.routes';
 import receivableRoutes from './routes/receivable.routes';
 import { budgetRoutes } from './routes/budget.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app: Application = express();
 
@@ -88,6 +89,9 @@ apiV1Router.use('/users', userRoutes);
 
 // Receivables Routes (Bab 6 PRD)
 apiV1Router.use('/receivables', receivableRoutes);
+
+// Developer Admin Panel Routes
+apiV1Router.use('/admin', adminRoutes);
 
 // Mount /api/v1 prefix
 app.use('/api/v1', apiV1Router);

@@ -14,12 +14,18 @@ import { resetPasswordSchema } from '@shared/types/user';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const queryToken = searchParams.get('token') || '';
+  const [manualToken, setManualToken] = useState('');
+  const token = (queryToken || manualToken).trim();
   const { resetPasswordMutation } = useAuth();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    token?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -29,33 +35,15 @@ function ResetPasswordForm() {
   const hasNumber = /[0-9]/.test(password);
   const isMatched = password.length > 0 && password === confirmPassword;
 
-  // Jika token tidak ada di query parameter URL
-  if (!token) {
-    return (
-      <Card className="p-6 sm:p-8 border border-slate-100 shadow-sm rounded-2xl bg-white text-center">
-        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-6 h-6 stroke-[2.2]" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-          Token Tidak Ditemukan
-        </h1>
-        <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-          Tautan reset kata sandi tidak valid atau parameter token tidak disertakan. Silakan ajukan permintaan baru dari halaman Lupa Kata Sandi.
-        </p>
-        <Button
-          onClick={() => router.push('/forgot-password')}
-          className="w-full mt-6 font-semibold"
-        >
-          Ajukan Tautan Baru
-        </Button>
-      </Card>
-    );
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
     setFieldErrors({});
+
+    if (!token) {
+      setFieldErrors({ token: 'Kode verifikasi / token reset wajib diisi' });
+      return;
+    }
 
     if (password !== confirmPassword) {
       setFieldErrors({ confirmPassword: 'Konfirmasi kata sandi tidak cocok' });
@@ -65,8 +53,9 @@ function ResetPasswordForm() {
     // Validasi Zod (PWD-03)
     const validation = resetPasswordSchema.safeParse({ token, password });
     if (!validation.success) {
-      const errors: { password?: string } = {};
+      const errors: { token?: string; password?: string } = {};
       for (const err of validation.error.issues) {
+        if (err.path[0] === 'token') errors.token = err.message;
         if (err.path[0] === 'password') errors.password = err.message;
       }
       setFieldErrors(errors);
@@ -107,6 +96,8 @@ function ResetPasswordForm() {
     );
   }
 
+  const isAdminReset = searchParams.get('adminReset') === 'true';
+
   return (
     <Card className="p-6 sm:p-8 border border-slate-100 shadow-sm rounded-2xl bg-white">
       <div className="mb-6 text-center">
@@ -114,12 +105,23 @@ function ResetPasswordForm() {
           <KeyRound className="w-5 h-5" />
         </div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-          Atur Ulang Kata Sandi
+          {isAdminReset ? 'Buat Kata Sandi Baru' : 'Atur Ulang Kata Sandi'}
         </h1>
         <p className="text-xs text-slate-500 mt-1.5">
-          Buat kata sandi baru yang kuat untuk mengamankan akun DuitQ Anda.
+          {isAdminReset
+            ? 'Administrator mereset akun Anda. Silakan masukkan kata sandi baru.'
+            : 'Buat kata sandi baru yang kuat untuk mengamankan akun DuitQ Anda.'}
         </p>
       </div>
+
+      {isAdminReset && (
+        <div className="mb-4 p-3.5 rounded-xl bg-blue-50 border border-blue-200/80 flex items-start gap-2.5 text-xs text-blue-900">
+          <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed text-[11px]">
+            Akun Anda telah direset oleh <strong>Administrator</strong>. Silakan buat kata sandi baru Anda untuk mengamankan akun dan melanjutkan masuk ke DuitQ.
+          </p>
+        </div>
+      )}
 
       {generalError && (
         <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-2.5 text-rose-700 text-xs">
@@ -129,6 +131,26 @@ function ResetPasswordForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {!queryToken && (
+          <div>
+            <Input
+              label="Kode Token Verifikasi (dari email)"
+              id="token"
+              type="text"
+              placeholder="Salin kode token yang dikirim ke email"
+              value={manualToken}
+              onChange={(e) => {
+                setManualToken(e.target.value);
+                if (fieldErrors.token) setFieldErrors((prev) => ({ ...prev, token: undefined }));
+              }}
+              error={fieldErrors.token}
+              leftIcon={<KeyRound className="w-4 h-4" />}
+              autoComplete="off"
+              required
+            />
+          </div>
+        )}
+
         <div>
           <Input
             label="Kata Sandi Baru"

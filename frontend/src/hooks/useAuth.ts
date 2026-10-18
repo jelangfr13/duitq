@@ -6,6 +6,7 @@ import {
   LoginDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
+  RequestAdminResetDTO,
   IUser,
   UpdateUserProfileDTO,
 } from '@shared/types/user';
@@ -44,6 +45,15 @@ export const useAuth = () => {
       return res.data;
     },
     onSuccess: (data) => {
+      // Jika akun memerlukan reset kata sandi baru (direset oleh Admin Panel dengan kotak kosong)
+      if (data?.requirePasswordReset || data?.data?.requirePasswordReset) {
+        const resetToken = data?.data?.resetToken || data?.resetToken;
+        if (typeof window !== 'undefined' && resetToken) {
+          window.location.href = `/reset-password?token=${resetToken}&adminReset=true`;
+          return;
+        }
+      }
+
       const token = data?.data?.accessToken;
       if (token && typeof window !== 'undefined') {
         document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax; Secure`;
@@ -99,6 +109,14 @@ export const useAuth = () => {
     },
   });
 
+  // Mutasi Permintaan Reset Kata Sandi ke Admin / Developer
+  const requestAdminResetMutation = useMutation({
+    mutationFn: async (dto: RequestAdminResetDTO) => {
+      const res = await api.post('/auth/request-admin-reset', dto);
+      return res.data;
+    },
+  });
+
   // Mutasi Perbarui Profil & Preferensi (Update v1.2)
   const updateProfileMutation = useMutation({
     mutationFn: async (dto: UpdateUserProfileDTO) => {
@@ -144,6 +162,7 @@ export const useAuth = () => {
     logoutMutation,
     forgotPasswordMutation,
     resetPasswordMutation,
+    requestAdminResetMutation,
     updateProfileMutation,
     updateProfile: updateProfileMutation.mutateAsync,
     isUpdatingProfile: updateProfileMutation.isPending,

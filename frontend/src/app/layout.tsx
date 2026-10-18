@@ -15,6 +15,16 @@ export const metadata: Metadata = {
   title: 'DuitQ — Manajemen Keuangan Pribadi Minimalis',
   description:
     'Aplikasi web mobile manajemen keuangan pribadi yang menyatukan sumber dana, ruang penyimpanan, dan piutang dalam satu antarmuka minimalis.',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/icon.svg',
+  },
 };
 
 export const viewport: Viewport = {

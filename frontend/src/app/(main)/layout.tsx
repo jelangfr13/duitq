@@ -139,9 +139,9 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-md mx-auto min-h-dvh bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative pb-20 shadow-sm flex flex-col transition-colors duration-150">
+    <div className="max-w-md mx-auto min-h-dvh bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative pb-20 shadow-sm flex flex-col transition-colors duration-150 overflow-x-hidden w-full">
       {/* Konten Halaman */}
-      <main className="flex-1 w-full pb-4">
+      <main className="flex-1 w-full pb-4 overflow-x-hidden">
         {children}
       </main>
 
